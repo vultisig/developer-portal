@@ -1,5 +1,6 @@
-import { apiClient } from "./client";
 import { EarningTransaction, Plugin, PluginApiKey, PluginPricing } from "@/utils/types";
+
+import { apiClient } from "./client";
 
 // Plugin API response types (from backend)
 type PluginApiResponse = {

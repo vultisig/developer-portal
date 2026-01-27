@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getPlugins, getPluginPricings } from "@/api/plugins";
+import { getPluginPricings,getPlugins } from "@/api/plugins";
 import { useCore } from "@/hooks/useCore";
 import { EditIcon } from "@/icons/EditIcon";
 import { Button } from "@/toolkits/Button";
