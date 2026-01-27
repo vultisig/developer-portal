@@ -2,6 +2,7 @@ import { message as Message, Modal } from "antd";
 import { hexlify, randomBytes } from "ethers";
 import { FC, ReactNode, useCallback, useState } from "react";
 
+import { authenticate } from "@/api/client";
 import { CoreContext, CoreContextProps, VaultInfo } from "@/context/Core";
 import { storageKeys } from "@/storage/constants";
 import { useLocalStorageWatcher } from "@/storage/hooks/useLocalStorageWatcher";
@@ -17,17 +18,6 @@ import {
 import { Theme } from "@/utils/theme";
 
 type StateProps = Pick<CoreContextProps, "address" | "theme" | "vault">;
-
-// Mock auth token function - replace with actual API call
-const getAuthToken = async (_data: {
-  chainCodeHex: string;
-  publicKey: string;
-  signature: string;
-  message: string;
-}): Promise<string> => {
-  // This is a mock - in production, this would call the actual API
-  return "mock-auth-token-" + Date.now();
-};
 
 export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<StateProps>({
@@ -94,26 +84,26 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
               });
 
               personalSign(address, message, "connect").then((signature) =>
-                getAuthToken({
-                  chainCodeHex: hexChainCode,
-                  publicKey: publicKeyEcdsa,
+                authenticate({
+                  chain_code_hex: hexChainCode,
+                  public_key: publicKeyEcdsa,
                   signature,
                   message,
                 })
-                  .then((newToken) => {
-                    setToken(publicKeyEcdsa, newToken);
+                  .then((response) => {
+                    setToken(publicKeyEcdsa, response.token);
                     setVaultId(publicKeyEcdsa);
 
                     setState((prevState) => ({
                       ...prevState,
-                      address,
+                      address: response.address,
                       vault: vaultInfo,
                     }));
 
                     messageAPI.success("Successfully authenticated!");
                   })
-                  .catch(() => {
-                    messageAPI.error("Authentication failed!");
+                  .catch((error) => {
+                    messageAPI.error(error.message || "Authentication failed!");
                   })
               );
             }

@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { getToken } from "@/storage/token";
 import { getVaultId } from "@/storage/vaultId";
 
 // API base URL - can be configured via environment variable
@@ -13,11 +14,14 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add public key header for authenticated requests
+// Request interceptor to add JWT Bearer token for authenticated requests
 apiClient.interceptors.request.use((config) => {
-  const publicKey = getVaultId();
-  if (publicKey) {
-    config.headers["X-Public-Key"] = publicKey;
+  const vaultId = getVaultId();
+  if (vaultId) {
+    const token = getToken(vaultId);
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -38,3 +42,22 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Auth API types
+export interface AuthRequest {
+  message: string;
+  signature: string;
+  public_key: string;
+  chain_code_hex: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  address: string;
+}
+
+// Auth API call
+export const authenticate = async (data: AuthRequest): Promise<AuthResponse> => {
+  const response = await apiClient.post<AuthResponse>("/auth", data);
+  return response.data;
+};
