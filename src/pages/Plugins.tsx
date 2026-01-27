@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getPluginPricings,getPlugins } from "@/api/plugins";
+import { getKillSwitch, getPluginPricings, getPlugins, KillSwitchStatus } from "@/api/plugins";
 import { useCore } from "@/hooks/useCore";
 import { EditIcon } from "@/icons/EditIcon";
 import { Button } from "@/toolkits/Button";
@@ -16,6 +16,7 @@ import { Plugin, PluginPricing } from "@/utils/types";
 
 type PluginWithPricing = Plugin & {
   pricings: PluginPricing[];
+  killSwitch?: KillSwitchStatus | null;
 };
 
 export const PluginsPage = () => {
@@ -29,13 +30,20 @@ export const PluginsPage = () => {
     const fetchPlugins = async () => {
       try {
         const pluginList = await getPlugins();
-        const pluginsWithPricing = await Promise.all(
+        const pluginsWithData = await Promise.all(
           pluginList.map(async (plugin) => {
             const pricings = await getPluginPricings(plugin.id);
-            return { ...plugin, pricings };
+            // Try to fetch kill switch (may fail with 403 for non-admin/staff)
+            let killSwitch: KillSwitchStatus | null = null;
+            try {
+              killSwitch = await getKillSwitch(plugin.id);
+            } catch {
+              // User may not have permission to view kill switch
+            }
+            return { ...plugin, pricings, killSwitch };
           })
         );
-        setPlugins(pluginsWithPricing);
+        setPlugins(pluginsWithData);
       } catch (error) {
         console.error("Failed to fetch plugins:", error);
       } finally {
@@ -114,6 +122,46 @@ export const PluginsPage = () => {
         >
           {endpoint}
         </Stack>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      render: (_, record) => (
+        record.killSwitch ? (
+          <HStack $style={{ gap: "8px" }}>
+            <Stack
+              $style={{
+                fontSize: "11px",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                backgroundColor: record.killSwitch.keygenEnabled
+                  ? colors.success.toHex()
+                  : colors.error.toHex(),
+                color: colors.neutral50.toHex(),
+              }}
+            >
+              Keygen
+            </Stack>
+            <Stack
+              $style={{
+                fontSize: "11px",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                backgroundColor: record.killSwitch.keysignEnabled
+                  ? colors.success.toHex()
+                  : colors.error.toHex(),
+                color: colors.neutral50.toHex(),
+              }}
+            >
+              Keysign
+            </Stack>
+          </HStack>
+        ) : (
+          <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+            —
+          </Stack>
+        )
       ),
     },
     {

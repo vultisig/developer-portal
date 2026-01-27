@@ -8,12 +8,15 @@ import {
   createPluginApiKey,
   createTeamInvite,
   deletePluginApiKey,
+  getKillSwitch,
   getMyPluginRole,
   getPlugin,
   getPluginApiKeys,
   getPluginPricings,
   getTeamMembers,
+  KillSwitchStatus,
   removeTeamMember,
+  setKillSwitch,
   updatePlugin,
   updatePluginApiKeyStatus,
 } from "@/api/plugins";
@@ -72,12 +75,17 @@ export const PluginEditPage = () => {
   // Team management state
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteRole, setInviteRole] = useState<TeamMemberRole>("viewer");
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [showInviteLinkModal, setShowInviteLinkModal] = useState(false);
   const [removingMember, setRemovingMember] = useState<string | null>(null);
+
+  // Kill switch state (staff only)
+  const [killSwitch, setKillSwitchState] = useState<KillSwitchStatus | null>(null);
+  const [updatingKillSwitch, setUpdatingKillSwitch] = useState(false);
 
   useEffect(() => {
     const fetchPlugin = async () => {
@@ -99,14 +107,18 @@ export const PluginEditPage = () => {
         setPricings(pricingData);
 
         // Fetch user's role for this plugin
+        let fetchedRole: TeamMemberRole | null = null;
         try {
           const roleData = await getMyPluginRole(id);
           setUserRole(roleData.role);
           setCanEdit(roleData.canEdit);
+          fetchedRole = roleData.role;
+          setIsStaff(roleData.role === "staff");
         } catch (roleError) {
           console.warn("Could not fetch user role:", roleError);
           setUserRole(null);
           setCanEdit(false);
+          setIsStaff(false);
         }
 
         // Fetch API keys (requires ownership - may fail with 403)
@@ -131,6 +143,17 @@ export const PluginEditPage = () => {
           console.warn("Could not fetch team members:", teamError);
           setTeamMembers([]);
           setIsAdmin(false);
+        }
+
+        // Fetch kill switch status (staff or admin)
+        if (fetchedRole === "staff" || fetchedRole === "admin") {
+          try {
+            const killSwitchData = await getKillSwitch(id);
+            setKillSwitchState(killSwitchData);
+          } catch (killSwitchError) {
+            console.warn("Could not fetch kill switch:", killSwitchError);
+            setKillSwitchState(null);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch plugin:", error);
@@ -302,7 +325,12 @@ export const PluginEditPage = () => {
     setCreatingInvite(true);
     try {
       const response = await createTeamInvite(id, { role: inviteRole });
-      setInviteLink(response.link);
+      // Ensure the link has the full hostname
+      let fullLink = response.link;
+      if (!fullLink.startsWith("http")) {
+        fullLink = `${window.location.origin}${fullLink.startsWith("/") ? "" : "/"}${fullLink}`;
+      }
+      setInviteLink(fullLink);
       setShowInviteModal(false);
       setShowInviteLinkModal(true);
       message.success("Invite link created successfully");
@@ -332,10 +360,32 @@ export const PluginEditPage = () => {
     }
   };
 
+  // Kill switch handler (staff only)
+  const handleToggleKillSwitch = async (type: "keygen" | "keysign", enabled: boolean) => {
+    if (!id) return;
+
+    setUpdatingKillSwitch(true);
+    try {
+      const request = type === "keygen"
+        ? { keygenEnabled: enabled }
+        : { keysignEnabled: enabled };
+      const result = await setKillSwitch(id, request);
+      setKillSwitchState(result);
+      message.success(`${type === "keygen" ? "Keygen" : "Keysign"} ${enabled ? "enabled" : "disabled"}`);
+    } catch (error) {
+      console.error("Failed to update kill switch:", error);
+      message.error(error instanceof Error ? error.message : "Failed to update kill switch");
+    } finally {
+      setUpdatingKillSwitch(false);
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "admin":
         return colors.buttonPrimary.toHex();
+      case "staff":
+        return colors.warning.toHex();
       case "editor":
         return colors.info.toHex();
       case "viewer":
@@ -404,7 +454,7 @@ export const PluginEditPage = () => {
         <VStack $style={{ gap: "4px" }}>
           <HStack $style={{ gap: "12px", alignItems: "center" }}>
             <Stack $style={{ fontSize: "24px", fontWeight: "600" }}>
-              Edit Plugin
+              {isStaff ? "Manage Plugin" : "Edit Plugin"}
             </Stack>
             {userRole && (
               <Stack
@@ -427,15 +477,17 @@ export const PluginEditPage = () => {
         </VStack>
         <HStack $style={{ gap: "12px" }}>
           <Button kind="secondary" onClick={() => navigate(routeTree.plugins.path)}>
-            Cancel
+            {isStaff ? "Back" : "Cancel"}
           </Button>
-          <Button
-            onClick={handleSaveClick}
-            loading={saving}
-            disabled={!canEdit}
-          >
-            Save Changes
-          </Button>
+          {!isStaff && (
+            <Button
+              onClick={handleSaveClick}
+              loading={saving}
+              disabled={!canEdit}
+            >
+              Save Changes
+            </Button>
+          )}
         </HStack>
       </HStack>
 
@@ -464,8 +516,22 @@ export const PluginEditPage = () => {
           You have <strong>editor</strong> access. You can edit title and description, but not the server endpoint.
         </Stack>
       )}
+      {userRole === "staff" && (
+        <Stack
+          $style={{
+            backgroundColor: colors.warning.toHex(),
+            color: colors.neutral900.toHex(),
+            padding: "12px 16px",
+            borderRadius: "8px",
+            fontSize: "13px",
+          }}
+        >
+          You have <strong>staff</strong> access. You can only manage the kill switch for this plugin.
+        </Stack>
+      )}
 
-      {/* Basic Information */}
+      {/* Basic Information (hidden from staff) */}
+      {!isStaff && (
       <VStack
         $style={{
           backgroundColor: colors.bgSecondary.toHex(),
@@ -523,8 +589,10 @@ export const PluginEditPage = () => {
           />
         </VStack>
       </VStack>
+      )}
 
-      {/* Pricing Information */}
+      {/* Pricing Information (hidden from staff) */}
+      {!isStaff && (
       <VStack
         $style={{
           backgroundColor: colors.bgSecondary.toHex(),
@@ -572,6 +640,7 @@ export const PluginEditPage = () => {
           </Stack>
         )}
       </VStack>
+      )}
 
       {/* API Keys (Admin only) */}
       {isAdmin && (
@@ -823,7 +892,8 @@ export const PluginEditPage = () => {
         </VStack>
       )}
 
-      {/* Metadata */}
+      {/* Metadata (hidden from staff) */}
+      {!isStaff && (
       <VStack
         $style={{
           backgroundColor: colors.bgSecondary.toHex(),
@@ -836,7 +906,7 @@ export const PluginEditPage = () => {
         <Stack $style={{ fontSize: "16px", fontWeight: "600" }}>
           Metadata
         </Stack>
-        <HStack $style={{ gap: "32px" }}>
+        <HStack $style={{ gap: "32px", flexWrap: "wrap" }}>
           <VStack $style={{ gap: "4px" }}>
             <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
               Created
@@ -867,10 +937,138 @@ export const PluginEditPage = () => {
               </Stack>
             </VStack>
           )}
+          {killSwitch && (
+            <>
+              <VStack $style={{ gap: "4px" }}>
+                <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                  Keygen
+                </Stack>
+                <Stack
+                  $style={{
+                    color: killSwitch.keygenEnabled ? colors.success.toHex() : colors.error.toHex(),
+                    fontWeight: "500",
+                  }}
+                >
+                  {killSwitch.keygenEnabled ? "Enabled" : "Disabled"}
+                </Stack>
+              </VStack>
+              <VStack $style={{ gap: "4px" }}>
+                <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                  Keysign
+                </Stack>
+                <Stack
+                  $style={{
+                    color: killSwitch.keysignEnabled ? colors.success.toHex() : colors.error.toHex(),
+                    fontWeight: "500",
+                  }}
+                >
+                  {killSwitch.keysignEnabled ? "Enabled" : "Disabled"}
+                </Stack>
+              </VStack>
+            </>
+          )}
         </HStack>
       </VStack>
+      )}
 
-      {/* EIP-712 Signing Modal */}
+      {/* Kill Switch (Staff or Admin) */}
+      {(isStaff || isAdmin) && (
+        <VStack
+          $style={{
+            backgroundColor: colors.bgSecondary.toHex(),
+            borderRadius: "12px",
+            border: `1px solid ${colors.warning.toHex()}`,
+            padding: "24px",
+            gap: "16px",
+          }}
+        >
+          <HStack $style={{ justifyContent: "space-between", alignItems: "center" }}>
+            <VStack $style={{ gap: "4px" }}>
+              <Stack $style={{ fontSize: "16px", fontWeight: "600" }}>
+                Kill Switch
+              </Stack>
+              <Stack $style={{ fontSize: "13px", color: colors.textTertiary.toHex() }}>
+                Emergency controls to disable plugin operations
+              </Stack>
+            </VStack>
+          </HStack>
+
+          {killSwitch ? (
+          <VStack $style={{ gap: "12px" }}>
+            <HStack
+              $style={{
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "8px",
+                padding: "16px",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <VStack $style={{ gap: "4px" }}>
+                <Stack $style={{ fontWeight: "500" }}>Keygen</Stack>
+                <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                  Allow new key generation for this plugin
+                </Stack>
+              </VStack>
+              <HStack $style={{ gap: "12px", alignItems: "center" }}>
+                <Stack
+                  $style={{
+                    fontSize: "12px",
+                    color: killSwitch.keygenEnabled ? colors.success.toHex() : colors.error.toHex(),
+                  }}
+                >
+                  {killSwitch.keygenEnabled ? "Enabled" : "Disabled"}
+                </Stack>
+                <Switch
+                  checked={killSwitch.keygenEnabled}
+                  onChange={(checked) => handleToggleKillSwitch("keygen", checked)}
+                  loading={updatingKillSwitch}
+                />
+              </HStack>
+            </HStack>
+
+            <HStack
+              $style={{
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "8px",
+                padding: "16px",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <VStack $style={{ gap: "4px" }}>
+                <Stack $style={{ fontWeight: "500" }}>Keysign</Stack>
+                <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                  Allow transaction signing for this plugin
+                </Stack>
+              </VStack>
+              <HStack $style={{ gap: "12px", alignItems: "center" }}>
+                <Stack
+                  $style={{
+                    fontSize: "12px",
+                    color: killSwitch.keysignEnabled ? colors.success.toHex() : colors.error.toHex(),
+                  }}
+                >
+                  {killSwitch.keysignEnabled ? "Enabled" : "Disabled"}
+                </Stack>
+                <Switch
+                  checked={killSwitch.keysignEnabled}
+                  onChange={(checked) => handleToggleKillSwitch("keysign", checked)}
+                  loading={updatingKillSwitch}
+                />
+              </HStack>
+            </HStack>
+          </VStack>
+          ) : (
+            <Stack $style={{ color: colors.textTertiary.toHex(), fontSize: "13px" }}>
+              Loading kill switch status...
+            </Stack>
+          )}
+        </VStack>
+      )}
+
+      {/* EIP-712 Signing Modal (hidden from staff) */}
+      {!isStaff && (
       <Modal
         title="Sign Plugin Update"
         open={showSigningModal}
@@ -956,6 +1154,7 @@ export const PluginEditPage = () => {
           </Stack>
         </VStack>
       </Modal>
+      )}
 
       {/* Create API Key Modal */}
       <Modal

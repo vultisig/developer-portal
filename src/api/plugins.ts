@@ -246,3 +246,35 @@ export const removeTeamMember = async (
   );
   return response.data;
 };
+
+// Kill Switch API types
+export type KillSwitchStatus = {
+  pluginId: string;
+  keygenEnabled: boolean;
+  keysignEnabled: boolean;
+};
+
+// Get kill switch status (staff only)
+export const getKillSwitch = async (pluginId: string): Promise<KillSwitchStatus> => {
+  const response = await apiClient.get<KillSwitchStatus>(
+    `/plugins/${pluginId}/kill-switch`
+  );
+  return response.data;
+};
+
+// Set kill switch status (staff only)
+export type SetKillSwitchRequest = {
+  keygenEnabled?: boolean;
+  keysignEnabled?: boolean;
+};
+
+export const setKillSwitch = async (
+  pluginId: string,
+  data: SetKillSwitchRequest
+): Promise<KillSwitchStatus> => {
+  const response = await apiClient.put<KillSwitchStatus>(
+    `/plugins/${pluginId}/kill-switch`,
+    data
+  );
+  return response.data;
+};
