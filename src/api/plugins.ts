@@ -1,41 +1,77 @@
-import { mockApiKeys, mockEarnings, mockPlugins, mockPricings } from "@/data/mockData";
+import { apiClient } from "./client";
 import { EarningTransaction, Plugin, PluginApiKey, PluginPricing } from "@/utils/types";
 
-// Simulated delay for realistic feel
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Plugin API response types (from backend)
+type PluginApiResponse = {
+  id: string;
+  title: string;
+  description: string;
+  server_endpoint: string;
+  category: string;
+  created_at: string;
+  updated_at: string;
+  logo_url?: string;
+  thumbnail_url?: string;
+};
 
-// Plugin API stubs
+// Transform backend plugin response to frontend type
+const transformPlugin = (p: PluginApiResponse): Plugin => ({
+  id: p.id,
+  title: p.title,
+  description: p.description,
+  serverEndpoint: p.server_endpoint,
+  category: p.category,
+  createdAt: p.created_at,
+  updatedAt: p.updated_at,
+  logoUrl: p.logo_url,
+  thumbnailUrl: p.thumbnail_url,
+});
+
+// Plugin API functions
 export const getPlugins = async (): Promise<Plugin[]> => {
-  await delay(300);
-  return mockPlugins;
+  const response = await apiClient.get<PluginApiResponse[]>("/plugins");
+  return response.data.map(transformPlugin);
 };
 
 export const getPlugin = async (id: string): Promise<Plugin | undefined> => {
-  await delay(200);
-  return mockPlugins.find(p => p.id === id);
+  try {
+    const response = await apiClient.get<PluginApiResponse>(`/plugins/${id}`);
+    return transformPlugin(response.data);
+  } catch (error) {
+    if ((error as Error).message === "plugin not found") {
+      return undefined;
+    }
+    throw error;
+  }
 };
 
-export const updatePlugin = async (id: string, data: Partial<Plugin>): Promise<Plugin> => {
-  await delay(500);
-  const plugin = mockPlugins.find(p => p.id === id);
-  if (!plugin) throw new Error("Plugin not found");
+export type PluginUpdateData = Partial<Plugin> & {
+  signature?: string;
+  signedMessage?: object;
+};
 
-  // In a real app, this would update the backend
-  Object.assign(plugin, data);
-  return plugin;
+export const updatePlugin = async (id: string, data: PluginUpdateData): Promise<Plugin> => {
+  const response = await apiClient.put<PluginApiResponse>(`/plugins/${id}`, {
+    title: data.title,
+    description: data.description,
+    server_endpoint: data.serverEndpoint,
+    signature: data.signature,
+    signed_message: data.signedMessage,
+  });
+  return transformPlugin(response.data);
 };
 
 export const getPluginPricings = async (pluginId: string): Promise<PluginPricing[]> => {
-  await delay(200);
-  return mockPricings.filter(p => p.pluginId === pluginId);
+  const response = await apiClient.get<PluginPricing[]>(`/plugins/${pluginId}/pricings`);
+  return response.data;
 };
 
 export const getPluginApiKeys = async (pluginId: string): Promise<PluginApiKey[]> => {
-  await delay(200);
-  return mockApiKeys.filter(k => k.pluginId === pluginId);
+  const response = await apiClient.get<PluginApiKey[]>(`/plugins/${pluginId}/api-keys`);
+  return response.data;
 };
 
-// Earnings API stubs
+// Earnings API types
 export type EarningsFilters = {
   pluginId?: string;
   status?: string;
@@ -45,13 +81,22 @@ export type EarningsFilters = {
 };
 
 export const getEarnings = async (filters?: EarningsFilters): Promise<EarningTransaction[]> => {
-  await delay(300);
-
-  let results = [...mockEarnings];
+  const params = new URLSearchParams();
 
   if (filters?.pluginId) {
-    results = results.filter(e => e.pluginId === filters.pluginId);
+    params.append("pluginId", filters.pluginId);
   }
+  if (filters?.dateFrom) {
+    params.append("dateFrom", filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    params.append("dateTo", filters.dateTo);
+  }
+
+  const response = await apiClient.get<EarningTransaction[]>("/earnings", { params });
+
+  // Apply client-side filtering for status and type (not supported by backend query params)
+  let results = response.data;
 
   if (filters?.status) {
     results = results.filter(e => e.status === filters.status);
@@ -61,19 +106,6 @@ export const getEarnings = async (filters?: EarningsFilters): Promise<EarningTra
     results = results.filter(e => e.type === filters.type);
   }
 
-  if (filters?.dateFrom) {
-    const fromDate = new Date(filters.dateFrom);
-    results = results.filter(e => new Date(e.createdAt) >= fromDate);
-  }
-
-  if (filters?.dateTo) {
-    const toDate = new Date(filters.dateTo);
-    results = results.filter(e => new Date(e.createdAt) <= toDate);
-  }
-
-  // Sort by date descending
-  results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
   return results;
 };
 
@@ -82,24 +114,10 @@ export const getEarningsSummary = async (): Promise<{
   totalTransactions: number;
   earningsByPlugin: Record<string, number>;
 }> => {
-  await delay(200);
-
-  const totalEarnings = mockEarnings
-    .filter(e => e.status === "completed")
-    .reduce((sum, e) => sum + e.amount, 0);
-
-  const totalTransactions = mockEarnings.length;
-
-  const earningsByPlugin: Record<string, number> = {};
-  mockEarnings
-    .filter(e => e.status === "completed")
-    .forEach(e => {
-      earningsByPlugin[e.pluginId] = (earningsByPlugin[e.pluginId] || 0) + e.amount;
-    });
-
-  return {
-    totalEarnings,
-    totalTransactions,
-    earningsByPlugin,
-  };
+  const response = await apiClient.get<{
+    totalEarnings: number;
+    totalTransactions: number;
+    earningsByPlugin: Record<string, number>;
+  }>("/earnings/summary");
+  return response.data;
 };

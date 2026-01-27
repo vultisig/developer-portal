@@ -1,4 +1,4 @@
-import { Input, message, Select } from "antd";
+import { Input, message, Modal, Select } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
@@ -8,6 +8,14 @@ import { useCore } from "@/hooks/useCore";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import {
+  computeFieldUpdates,
+  createPluginUpdateTypedData,
+  FieldUpdate,
+  generateNonce,
+  PluginUpdateMessage,
+} from "@/utils/eip712";
+import { signTypedData } from "@/utils/extension";
 import { formatCurrency, formatDate } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
 import { Plugin, PluginApiKey, PluginPricing } from "@/utils/types";
@@ -16,11 +24,12 @@ const { TextArea } = Input;
 
 export const PluginEditPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { vault } = useCore();
+  const { address, vault } = useCore();
   const navigate = useNavigate();
   const colors = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [signing, setSigning] = useState(false);
   const [plugin, setPlugin] = useState<Plugin | null>(null);
   const [pricings, setPricings] = useState<PluginPricing[]>([]);
   const [apiKeys, setApiKeys] = useState<PluginApiKey[]>([]);
@@ -31,15 +40,19 @@ export const PluginEditPage = () => {
   const [serverEndpoint, setServerEndpoint] = useState("");
   const [category, setCategory] = useState("");
 
+  // Signing modal state
+  const [showSigningModal, setShowSigningModal] = useState(false);
+  const [pendingUpdates, setPendingUpdates] = useState<FieldUpdate[]>([]);
+
   useEffect(() => {
     const fetchPlugin = async () => {
       if (!id) return;
 
       try {
-        const [pluginData, pricingData, apiKeyData] = await Promise.all([
+        // Fetch plugin and pricings (public endpoints)
+        const [pluginData, pricingData] = await Promise.all([
           getPlugin(id),
           getPluginPricings(id),
-          getPluginApiKeys(id),
         ]);
 
         if (pluginData) {
@@ -50,7 +63,16 @@ export const PluginEditPage = () => {
           setCategory(pluginData.category);
         }
         setPricings(pricingData);
-        setApiKeys(apiKeyData);
+
+        // Fetch API keys (requires ownership - may fail with 403)
+        try {
+          const apiKeyData = await getPluginApiKeys(id);
+          setApiKeys(apiKeyData);
+        } catch (apiKeyError) {
+          // User may not be authorized to view API keys
+          console.warn("Could not fetch API keys:", apiKeyError);
+          setApiKeys([]);
+        }
       } catch (error) {
         console.error("Failed to fetch plugin:", error);
         message.error("Failed to load plugin");
@@ -62,23 +84,82 @@ export const PluginEditPage = () => {
     fetchPlugin();
   }, [id]);
 
-  const handleSave = async () => {
-    if (!id) return;
+  const handleSaveClick = () => {
+    if (!id || !plugin) return;
 
-    setSaving(true);
+    // Compute field updates by comparing original and current values
+    const original: Record<string, string> = {
+      title: plugin.title,
+      description: plugin.description,
+      serverEndpoint: plugin.serverEndpoint,
+      category: plugin.category,
+    };
+
+    const updated: Record<string, string> = {
+      title,
+      description,
+      serverEndpoint,
+      category,
+    };
+
+    const updates = computeFieldUpdates(original, updated);
+
+    if (updates.length === 0) {
+      message.info("No changes to save");
+      return;
+    }
+
+    // Show signing modal with pending updates
+    setPendingUpdates(updates);
+    setShowSigningModal(true);
+  };
+
+  const handleSignAndSave = async () => {
+    if (!id || !address) return;
+
+    setSigning(true);
     try {
+      // Create EIP-712 typed data message
+      const updateMessage: PluginUpdateMessage = {
+        pluginId: id,
+        signer: address,
+        nonce: generateNonce(),
+        timestamp: Math.floor(Date.now() / 1000),
+        updates: pendingUpdates,
+      };
+
+      const typedData = createPluginUpdateTypedData(updateMessage);
+
+      // Request EIP-712 signature from wallet
+      const signature = await signTypedData(address, typedData);
+
+      if (!signature) {
+        throw new Error("Signature was not provided");
+      }
+
+      // Save the plugin with the signature
+      setSaving(true);
       await updatePlugin(id, {
         title,
         description,
         serverEndpoint,
         category,
+        signature,
+        signedMessage: updateMessage,
       });
+
+      setShowSigningModal(false);
       message.success("Plugin updated successfully");
       navigate(routeTree.plugins.path);
     } catch (error) {
-      console.error("Failed to update plugin:", error);
-      message.error("Failed to update plugin");
+      console.error("Failed to sign or update plugin:", error);
+      if (error instanceof Error) {
+        message.error(error.message);
+      } else {
+        message.error("Failed to sign or update plugin");
+      }
     } finally {
+      setSigning(false);
       setSaving(false);
     }
   };
@@ -145,7 +226,7 @@ export const PluginEditPage = () => {
           <Button kind="secondary" onClick={() => navigate(routeTree.plugins.path)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} loading={saving}>
+          <Button onClick={handleSaveClick} loading={saving}>
             Save Changes
           </Button>
         </HStack>
@@ -378,6 +459,93 @@ export const PluginEditPage = () => {
           )}
         </HStack>
       </VStack>
+
+      {/* EIP-712 Signing Modal */}
+      <Modal
+        title="Sign Plugin Update"
+        open={showSigningModal}
+        onCancel={() => setShowSigningModal(false)}
+        footer={[
+          <Button
+            key="cancel"
+            kind="secondary"
+            onClick={() => setShowSigningModal(false)}
+            disabled={signing}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="sign"
+            onClick={handleSignAndSave}
+            loading={signing}
+          >
+            Sign & Save
+          </Button>,
+        ]}
+      >
+        <VStack $style={{ gap: "16px", padding: "16px 0" }}>
+          <Stack $style={{ color: colors.textSecondary.toHex() }}>
+            Please sign to confirm the following changes to plugin{" "}
+            <strong>{plugin?.title || id}</strong>:
+          </Stack>
+
+          <VStack
+            $style={{
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderRadius: "8px",
+              padding: "16px",
+              gap: "12px",
+            }}
+          >
+            {pendingUpdates.map((update, index) => (
+              <VStack key={index} $style={{ gap: "4px" }}>
+                <Stack
+                  $style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: colors.textPrimary.toHex(),
+                  }}
+                >
+                  {update.field}
+                </Stack>
+                <HStack $style={{ gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                  <Stack
+                    $style={{
+                      fontSize: "12px",
+                      color: colors.error.toHex(),
+                      textDecoration: "line-through",
+                      maxWidth: "200px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {update.oldValue || "(empty)"}
+                  </Stack>
+                  <Stack $style={{ color: colors.textTertiary.toHex() }}>→</Stack>
+                  <Stack
+                    $style={{
+                      fontSize: "12px",
+                      color: colors.success.toHex(),
+                      maxWidth: "200px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {update.newValue || "(empty)"}
+                  </Stack>
+                </HStack>
+              </VStack>
+            ))}
+          </VStack>
+
+          <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+            This action requires an EIP-712 signature from your connected wallet to verify
+            your authorization.
+          </Stack>
+        </VStack>
+      </Modal>
     </VStack>
   );
 };

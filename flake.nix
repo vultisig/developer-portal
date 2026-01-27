@@ -42,6 +42,10 @@
                     npm.enable = true;
                   };
 
+                  languages.go = {
+                    enable = true;
+                  };
+
                   enterShell = ''
                     echo "developer-portal shell"
                   '';
