@@ -71,6 +71,53 @@ export const getPluginApiKeys = async (pluginId: string): Promise<PluginApiKey[]
   return response.data;
 };
 
+// API Key management types
+export type CreateApiKeyRequest = {
+  expiresAt?: string; // RFC3339 format, optional
+};
+
+export type CreateApiKeyResponse = PluginApiKey; // Full key returned only on creation
+
+export type UpdateApiKeyRequest = {
+  status: number; // 0 = disabled, 1 = enabled
+};
+
+// Create a new API key for a plugin
+export const createPluginApiKey = async (
+  pluginId: string,
+  data: CreateApiKeyRequest
+): Promise<CreateApiKeyResponse> => {
+  const response = await apiClient.post<CreateApiKeyResponse>(
+    `/plugins/${pluginId}/api-keys`,
+    data
+  );
+  return response.data;
+};
+
+// Update API key status (enable/disable)
+export const updatePluginApiKeyStatus = async (
+  pluginId: string,
+  keyId: string,
+  status: number
+): Promise<PluginApiKey> => {
+  const response = await apiClient.put<PluginApiKey>(
+    `/plugins/${pluginId}/api-keys/${keyId}`,
+    { status }
+  );
+  return response.data;
+};
+
+// Delete (expire) an API key
+export const deletePluginApiKey = async (
+  pluginId: string,
+  keyId: string
+): Promise<PluginApiKey> => {
+  const response = await apiClient.delete<PluginApiKey>(
+    `/plugins/${pluginId}/api-keys/${keyId}`
+  );
+  return response.data;
+};
+
 // Earnings API types
 export type EarningsFilters = {
   pluginId?: string;

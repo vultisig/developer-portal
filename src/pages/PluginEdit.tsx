@@ -1,9 +1,18 @@
-import { Input, message, Modal } from "antd";
+import { DatePicker, Input, message, Modal, Switch } from "antd";
+import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getPlugin, getPluginApiKeys, getPluginPricings, updatePlugin } from "@/api/plugins";
+import {
+  createPluginApiKey,
+  deletePluginApiKey,
+  getPlugin,
+  getPluginApiKeys,
+  getPluginPricings,
+  updatePlugin,
+  updatePluginApiKeyStatus,
+} from "@/api/plugins";
 import { useCore } from "@/hooks/useCore";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
@@ -42,6 +51,15 @@ export const PluginEditPage = () => {
   // Signing modal state
   const [showSigningModal, setShowSigningModal] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState<FieldUpdate[]>([]);
+
+  // API Key management state
+  const [showCreateKeyModal, setShowCreateKeyModal] = useState(false);
+  const [newKeyExpiry, setNewKeyExpiry] = useState<dayjs.Dayjs | null>(null);
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [showNewKeyModal, setShowNewKeyModal] = useState(false);
+  const [updatingKeyId, setUpdatingKeyId] = useState<string | null>(null);
+  const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPlugin = async () => {
@@ -157,6 +175,87 @@ export const PluginEditPage = () => {
       setSigning(false);
       setSaving(false);
     }
+  };
+
+  // API Key handlers
+  const handleCreateApiKey = async () => {
+    if (!id) return;
+
+    setCreatingKey(true);
+    try {
+      const response = await createPluginApiKey(id, {
+        expiresAt: newKeyExpiry ? newKeyExpiry.toISOString() : undefined,
+      });
+
+      // Store the full key to show in the modal
+      setNewlyCreatedKey(response.apikey);
+      setShowCreateKeyModal(false);
+      setShowNewKeyModal(true);
+      setNewKeyExpiry(null);
+
+      // Refresh the API keys list
+      const apiKeyData = await getPluginApiKeys(id);
+      setApiKeys(apiKeyData);
+
+      message.success("API key created successfully");
+    } catch (error) {
+      console.error("Failed to create API key:", error);
+      message.error(error instanceof Error ? error.message : "Failed to create API key");
+    } finally {
+      setCreatingKey(false);
+    }
+  };
+
+  const handleToggleKeyStatus = async (keyId: string, currentStatus: number) => {
+    if (!id) return;
+
+    setUpdatingKeyId(keyId);
+    try {
+      const newStatus = currentStatus === 1 ? 0 : 1;
+      await updatePluginApiKeyStatus(id, keyId, newStatus);
+
+      // Refresh the API keys list
+      const apiKeyData = await getPluginApiKeys(id);
+      setApiKeys(apiKeyData);
+
+      message.success(`API key ${newStatus === 1 ? "enabled" : "disabled"}`);
+    } catch (error) {
+      console.error("Failed to update API key:", error);
+      message.error(error instanceof Error ? error.message : "Failed to update API key");
+    } finally {
+      setUpdatingKeyId(null);
+    }
+  };
+
+  const handleDeleteApiKey = async (keyId: string) => {
+    if (!id) return;
+
+    setDeletingKeyId(keyId);
+    try {
+      await deletePluginApiKey(id, keyId);
+
+      // Refresh the API keys list
+      const apiKeyData = await getPluginApiKeys(id);
+      setApiKeys(apiKeyData);
+
+      message.success("API key deleted");
+    } catch (error) {
+      console.error("Failed to delete API key:", error);
+      message.error(error instanceof Error ? error.message : "Failed to delete API key");
+    } finally {
+      setDeletingKeyId(null);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    message.success("Copied to clipboard");
+  };
+
+  // Check if a key is expired
+  const isKeyExpired = (expiresAt?: string) => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt) < new Date();
   };
 
   if (!vault) {
@@ -335,53 +434,119 @@ export const PluginEditPage = () => {
           gap: "16px",
         }}
       >
-        <Stack $style={{ fontSize: "16px", fontWeight: "600" }}>
-          API Keys
-        </Stack>
+        <HStack $style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <Stack $style={{ fontSize: "16px", fontWeight: "600" }}>
+            API Keys
+          </Stack>
+          <Button
+            kind="secondary"
+            onClick={() => setShowCreateKeyModal(true)}
+          >
+            Create New Key
+          </Button>
+        </HStack>
 
         {apiKeys.length > 0 ? (
           <VStack $style={{ gap: "12px" }}>
-            {apiKeys.map((apiKey) => (
-              <HStack
-                key={apiKey.id}
-                $style={{
-                  backgroundColor: colors.bgTertiary.toHex(),
-                  borderRadius: "8px",
-                  padding: "12px 16px",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <VStack $style={{ gap: "4px" }}>
-                  <Stack
-                    $style={{
-                      fontFamily: "monospace",
-                      fontSize: "13px",
-                      backgroundColor: colors.bgPrimary.toHex(),
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    {apiKey.apikey}
-                  </Stack>
-                  <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
-                    Created: {formatDate(apiKey.createdAt)}
-                    {apiKey.expiresAt && ` | Expires: ${formatDate(apiKey.expiresAt)}`}
-                  </Stack>
-                </VStack>
-                <Stack
+            {apiKeys.map((apiKey) => {
+              const expired = isKeyExpired(apiKey.expiresAt);
+              const isUpdating = updatingKeyId === apiKey.id;
+              const isDeleting = deletingKeyId === apiKey.id;
+
+              return (
+                <HStack
+                  key={apiKey.id}
                   $style={{
-                    backgroundColor: apiKey.status === 1 ? colors.success.toHex() : colors.error.toHex(),
-                    color: colors.neutral50.toHex(),
-                    padding: "4px 12px",
-                    borderRadius: "12px",
-                    fontSize: "12px",
+                    backgroundColor: colors.bgTertiary.toHex(),
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    opacity: expired ? 0.6 : 1,
                   }}
                 >
-                  {apiKey.status === 1 ? "Active" : "Inactive"}
-                </Stack>
-              </HStack>
-            ))}
+                  <VStack $style={{ gap: "4px", flex: 1 }}>
+                    <Stack
+                      $style={{
+                        fontFamily: "monospace",
+                        fontSize: "13px",
+                        backgroundColor: colors.bgPrimary.toHex(),
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        display: "inline-block",
+                        width: "fit-content",
+                      }}
+                    >
+                      {apiKey.apikey}
+                    </Stack>
+                    <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                      Created: {formatDate(apiKey.createdAt)}
+                      {apiKey.expiresAt && (
+                        <span style={{ color: expired ? colors.error.toHex() : undefined }}>
+                          {" | "}
+                          {expired ? "Expired: " : "Expires: "}
+                          {formatDate(apiKey.expiresAt)}
+                        </span>
+                      )}
+                    </Stack>
+                  </VStack>
+
+                  <HStack $style={{ gap: "12px", alignItems: "center" }}>
+                    {/* Status Toggle */}
+                    <HStack $style={{ gap: "8px", alignItems: "center" }}>
+                      <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                        {apiKey.status === 1 ? "Enabled" : "Disabled"}
+                      </Stack>
+                      <Switch
+                        checked={apiKey.status === 1}
+                        onChange={() => handleToggleKeyStatus(apiKey.id, apiKey.status)}
+                        loading={isUpdating}
+                        disabled={expired || isDeleting}
+                        size="small"
+                      />
+                    </HStack>
+
+                    {/* Status Badge */}
+                    <Stack
+                      $style={{
+                        backgroundColor: expired
+                          ? colors.textTertiary.toHex()
+                          : apiKey.status === 1
+                          ? colors.success.toHex()
+                          : colors.error.toHex(),
+                        color: colors.neutral50.toHex(),
+                        padding: "4px 12px",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                        minWidth: "70px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {expired ? "Expired" : apiKey.status === 1 ? "Active" : "Inactive"}
+                    </Stack>
+
+                    {/* Delete Button */}
+                    <Button
+                      kind="secondary"
+                      onClick={() => {
+                        Modal.confirm({
+                          title: "Delete API Key?",
+                          content: "This will immediately expire the API key. This action cannot be undone.",
+                          okText: "Delete",
+                          okType: "danger",
+                          cancelText: "Cancel",
+                          onOk: () => handleDeleteApiKey(apiKey.id),
+                        });
+                      }}
+                      loading={isDeleting}
+                      disabled={expired}
+                    >
+                      Delete
+                    </Button>
+                  </HStack>
+                </HStack>
+              );
+            })}
           </VStack>
         ) : (
           <Stack $style={{ color: colors.textTertiary.toHex() }}>
@@ -520,6 +685,146 @@ export const PluginEditPage = () => {
           <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
             This action requires an EIP-712 signature from your connected wallet to verify
             your authorization.
+          </Stack>
+        </VStack>
+      </Modal>
+
+      {/* Create API Key Modal */}
+      <Modal
+        title="Create New API Key"
+        open={showCreateKeyModal}
+        onCancel={() => {
+          setShowCreateKeyModal(false);
+          setNewKeyExpiry(null);
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            kind="secondary"
+            onClick={() => {
+              setShowCreateKeyModal(false);
+              setNewKeyExpiry(null);
+            }}
+            disabled={creatingKey}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="create"
+            onClick={handleCreateApiKey}
+            loading={creatingKey}
+          >
+            Create Key
+          </Button>,
+        ]}
+      >
+        <VStack $style={{ gap: "20px", padding: "16px 0" }}>
+          <Stack $style={{ color: colors.textSecondary.toHex() }}>
+            Create a new API key for this plugin. The key will be shown only once after creation.
+          </Stack>
+
+          <VStack $style={{ gap: "8px" }}>
+            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
+              Expiry Date (optional)
+            </Stack>
+            <DatePicker
+              value={newKeyExpiry}
+              onChange={(date) => setNewKeyExpiry(date)}
+              placeholder="No expiry (never expires)"
+              showTime
+              disabledDate={(current) => current && current < dayjs().startOf("day")}
+              style={{ width: "100%" }}
+            />
+            <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+              Leave empty for a key that never expires. You can always delete it later.
+            </Stack>
+          </VStack>
+        </VStack>
+      </Modal>
+
+      {/* Newly Created Key Modal */}
+      <Modal
+        title="API Key Created"
+        open={showNewKeyModal}
+        onCancel={() => {
+          setShowNewKeyModal(false);
+          setNewlyCreatedKey(null);
+        }}
+        footer={[
+          <Button
+            key="copy"
+            onClick={() => {
+              if (newlyCreatedKey) {
+                copyToClipboard(newlyCreatedKey);
+              }
+            }}
+          >
+            Copy Key
+          </Button>,
+          <Button
+            key="done"
+            kind="secondary"
+            onClick={() => {
+              setShowNewKeyModal(false);
+              setNewlyCreatedKey(null);
+            }}
+          >
+            Done
+          </Button>,
+        ]}
+      >
+        <VStack $style={{ gap: "16px", padding: "16px 0" }}>
+          <Stack
+            $style={{
+              backgroundColor: colors.warning.toHex(),
+              color: colors.neutral900.toHex(),
+              padding: "12px 16px",
+              borderRadius: "8px",
+              fontSize: "13px",
+            }}
+          >
+            <strong>Important:</strong> Copy this API key now. You won&apos;t be able to see it again!
+          </Stack>
+
+          <VStack $style={{ gap: "8px" }}>
+            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
+              Your new API key:
+            </Stack>
+            <HStack
+              $style={{
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "8px",
+                padding: "12px 16px",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <Stack
+                $style={{
+                  fontFamily: "monospace",
+                  fontSize: "14px",
+                  flex: 1,
+                  wordBreak: "break-all",
+                }}
+              >
+                {newlyCreatedKey}
+              </Stack>
+              <Button
+                kind="secondary"
+                onClick={() => {
+                  if (newlyCreatedKey) {
+                    copyToClipboard(newlyCreatedKey);
+                  }
+                }}
+              >
+                Copy
+              </Button>
+            </HStack>
+          </VStack>
+
+          <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+            Use this key to authenticate API requests to your plugin. Include it in the
+            Authorization header as: <code>Bearer {"{your-api-key}"}</code>
           </Stack>
         </VStack>
       </Modal>
