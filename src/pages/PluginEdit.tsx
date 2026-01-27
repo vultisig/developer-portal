@@ -253,7 +253,7 @@ export const PluginEditPage = () => {
   };
 
   // Check if a key is expired
-  const isKeyExpired = (expiresAt?: string) => {
+  const isKeyExpired = (expiresAt?: string | null) => {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
   };
