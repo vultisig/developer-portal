@@ -83,10 +83,10 @@ export const NewPluginPage = () => {
         <VStack $style={{ gap: "16px", width: "100%" }}>
           <Button
             kind="primary"
-            onClick={() => window.open("mailto:developers@vultisig.com", "_blank")}
+            onClick={() => window.open("mailto:dev@vultisig.com", "_blank")}
             icon={<MailIcon />}
           >
-            Email Us: developers@vultisig.com
+            Email Us: dev@vultisig.com
           </Button>
 
           <HStack $style={{ gap: "12px", justifyContent: "center" }}>
