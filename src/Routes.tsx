@@ -7,6 +7,7 @@ import {
 
 import { useCore } from "@/hooks/useCore";
 import { DefaultLayout } from "@/layouts/Default";
+import { AcceptInvitePage } from "@/pages/AcceptInvite";
 import { EarningsPage } from "@/pages/Earnings";
 import { NewPluginPage } from "@/pages/NewPlugin";
 import { NotFoundPage } from "@/pages/NotFound";
@@ -38,6 +39,7 @@ export const Routes = () => {
         },
         { path: routeTree.earnings.path, element: <EarningsPage /> },
         { path: routeTree.newPlugin.path, element: <NewPluginPage /> },
+        { path: routeTree.acceptInvite.path, element: <AcceptInvitePage /> },
       ],
     },
     { path: routeTree.notFound.path, element: <NotFoundPage /> },

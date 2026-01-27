@@ -1,4 +1,4 @@
-import { EarningTransaction, Plugin, PluginApiKey, PluginPricing } from "@/utils/types";
+import { EarningTransaction, InviteInfo, Plugin, PluginApiKey, PluginPricing, TeamMember, TeamMemberRole } from "@/utils/types";
 
 import { apiClient } from "./client";
 
@@ -167,5 +167,82 @@ export const getEarningsSummary = async (): Promise<{
     totalTransactions: number;
     earningsByPlugin: Record<string, number>;
   }>("/earnings/summary");
+  return response.data;
+};
+
+// Get user's role for a plugin
+export type MyRoleResponse = {
+  role: TeamMemberRole;
+  canEdit: boolean;
+};
+
+export const getMyPluginRole = async (pluginId: string): Promise<MyRoleResponse> => {
+  const response = await apiClient.get<MyRoleResponse>(`/plugins/${pluginId}/my-role`);
+  return response.data;
+};
+
+// Team Management API functions
+
+// Get team members for a plugin (admin only)
+export const getTeamMembers = async (pluginId: string): Promise<TeamMember[]> => {
+  const response = await apiClient.get<TeamMember[]>(`/plugins/${pluginId}/team`);
+  return response.data;
+};
+
+// Create an invite link for a new team member
+export type CreateInviteRequest = {
+  role: TeamMemberRole;
+};
+
+export type CreateInviteResponse = {
+  link: string;
+  expiresAt: string;
+  role: TeamMemberRole;
+};
+
+export const createTeamInvite = async (
+  pluginId: string,
+  data: CreateInviteRequest
+): Promise<CreateInviteResponse> => {
+  const response = await apiClient.post<CreateInviteResponse>(
+    `/plugins/${pluginId}/team/invite`,
+    data
+  );
+  return response.data;
+};
+
+// Validate an invite link (public endpoint, no auth required)
+export const validateInvite = async (data: string, sig: string): Promise<InviteInfo> => {
+  const response = await apiClient.get<InviteInfo>("/invite/validate", {
+    params: { data, sig },
+  });
+  return response.data;
+};
+
+// Accept an invite
+export type AcceptInviteRequest = {
+  data: string;
+  signature: string;
+};
+
+export const acceptTeamInvite = async (
+  pluginId: string,
+  data: AcceptInviteRequest
+): Promise<{ message: string; role: string }> => {
+  const response = await apiClient.post<{ message: string; role: string }>(
+    `/plugins/${pluginId}/team/accept`,
+    data
+  );
+  return response.data;
+};
+
+// Remove a team member (admin only)
+export const removeTeamMember = async (
+  pluginId: string,
+  publicKey: string
+): Promise<{ message: string }> => {
+  const response = await apiClient.delete<{ message: string }>(
+    `/plugins/${pluginId}/team/${encodeURIComponent(publicKey)}`
+  );
   return response.data;
 };

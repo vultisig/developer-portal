@@ -72,3 +72,22 @@ export type Review = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type TeamMemberRole = "admin" | "staff" | "editor" | "viewer";
+
+export type TeamMember = {
+  publicKey: string;
+  role: TeamMemberRole;
+  addedVia: string;
+  addedBy?: string;
+  createdAt: string;
+  isCurrentUser: boolean;
+};
+
+export type InviteInfo = {
+  pluginId: string;
+  pluginName: string;
+  role: TeamMemberRole;
+  invitedBy: string;
+  expiresAt: string;
+};

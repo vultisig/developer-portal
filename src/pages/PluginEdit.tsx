@@ -6,10 +6,14 @@ import { useTheme } from "styled-components";
 
 import {
   createPluginApiKey,
+  createTeamInvite,
   deletePluginApiKey,
+  getMyPluginRole,
   getPlugin,
   getPluginApiKeys,
   getPluginPricings,
+  getTeamMembers,
+  removeTeamMember,
   updatePlugin,
   updatePluginApiKeyStatus,
 } from "@/api/plugins";
@@ -27,7 +31,7 @@ import {
 import { signTypedData } from "@/utils/extension";
 import { formatCurrency, formatDate } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Plugin, PluginApiKey, PluginPricing } from "@/utils/types";
+import { Plugin, PluginApiKey, PluginPricing, TeamMember, TeamMemberRole } from "@/utils/types";
 
 const { TextArea } = Input;
 
@@ -61,6 +65,20 @@ export const PluginEditPage = () => {
   const [updatingKeyId, setUpdatingKeyId] = useState<string | null>(null);
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
 
+  // User role state
+  const [userRole, setUserRole] = useState<TeamMemberRole | null>(null);
+  const [canEdit, setCanEdit] = useState(true);
+
+  // Team management state
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteRole, setInviteRole] = useState<TeamMemberRole>("viewer");
+  const [creatingInvite, setCreatingInvite] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [showInviteLinkModal, setShowInviteLinkModal] = useState(false);
+  const [removingMember, setRemovingMember] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchPlugin = async () => {
       if (!id) return;
@@ -80,6 +98,17 @@ export const PluginEditPage = () => {
         }
         setPricings(pricingData);
 
+        // Fetch user's role for this plugin
+        try {
+          const roleData = await getMyPluginRole(id);
+          setUserRole(roleData.role);
+          setCanEdit(roleData.canEdit);
+        } catch (roleError) {
+          console.warn("Could not fetch user role:", roleError);
+          setUserRole(null);
+          setCanEdit(false);
+        }
+
         // Fetch API keys (requires ownership - may fail with 403)
         try {
           const apiKeyData = await getPluginApiKeys(id);
@@ -88,6 +117,20 @@ export const PluginEditPage = () => {
           // User may not be authorized to view API keys
           console.warn("Could not fetch API keys:", apiKeyError);
           setApiKeys([]);
+        }
+
+        // Fetch team members (admin only - may fail with 403)
+        try {
+          const teamData = await getTeamMembers(id);
+          setTeamMembers(teamData);
+          // Check if current user is an admin
+          const currentUserMember = teamData.find(m => m.isCurrentUser);
+          setIsAdmin(currentUserMember?.role === "admin");
+        } catch (teamError) {
+          // User may not be authorized to view team members
+          console.warn("Could not fetch team members:", teamError);
+          setTeamMembers([]);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error("Failed to fetch plugin:", error);
@@ -252,6 +295,56 @@ export const PluginEditPage = () => {
     message.success("Copied to clipboard");
   };
 
+  // Team management handlers
+  const handleCreateInvite = async () => {
+    if (!id) return;
+
+    setCreatingInvite(true);
+    try {
+      const response = await createTeamInvite(id, { role: inviteRole });
+      setInviteLink(response.link);
+      setShowInviteModal(false);
+      setShowInviteLinkModal(true);
+      message.success("Invite link created successfully");
+    } catch (error) {
+      console.error("Failed to create invite:", error);
+      message.error(error instanceof Error ? error.message : "Failed to create invite");
+    } finally {
+      setCreatingInvite(false);
+    }
+  };
+
+  const handleRemoveTeamMember = async (publicKey: string) => {
+    if (!id) return;
+
+    setRemovingMember(publicKey);
+    try {
+      await removeTeamMember(id, publicKey);
+      // Refresh team members
+      const teamData = await getTeamMembers(id);
+      setTeamMembers(teamData);
+      message.success("Team member removed");
+    } catch (error) {
+      console.error("Failed to remove team member:", error);
+      message.error(error instanceof Error ? error.message : "Failed to remove team member");
+    } finally {
+      setRemovingMember(null);
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return colors.buttonPrimary.toHex();
+      case "editor":
+        return colors.info.toHex();
+      case "viewer":
+        return colors.success.toHex();
+      default:
+        return colors.textTertiary.toHex();
+    }
+  };
+
   // Check if a key is expired
   const isKeyExpired = (expiresAt?: string | null) => {
     if (!expiresAt) return false;
@@ -309,9 +402,25 @@ export const PluginEditPage = () => {
       {/* Header */}
       <HStack $style={{ alignItems: "center", justifyContent: "space-between" }}>
         <VStack $style={{ gap: "4px" }}>
-          <Stack $style={{ fontSize: "24px", fontWeight: "600" }}>
-            Edit Plugin
-          </Stack>
+          <HStack $style={{ gap: "12px", alignItems: "center" }}>
+            <Stack $style={{ fontSize: "24px", fontWeight: "600" }}>
+              Edit Plugin
+            </Stack>
+            {userRole && (
+              <Stack
+                $style={{
+                  backgroundColor: getRoleBadgeColor(userRole),
+                  color: colors.neutral50.toHex(),
+                  padding: "4px 12px",
+                  borderRadius: "12px",
+                  fontSize: "12px",
+                  textTransform: "capitalize",
+                }}
+              >
+                {userRole}
+              </Stack>
+            )}
+          </HStack>
           <Stack $style={{ color: colors.textTertiary.toHex() }}>
             ID: {plugin.id}
           </Stack>
@@ -320,11 +429,41 @@ export const PluginEditPage = () => {
           <Button kind="secondary" onClick={() => navigate(routeTree.plugins.path)}>
             Cancel
           </Button>
-          <Button onClick={handleSaveClick} loading={saving}>
+          <Button
+            onClick={handleSaveClick}
+            loading={saving}
+            disabled={!canEdit}
+          >
             Save Changes
           </Button>
         </HStack>
       </HStack>
+
+      {/* Role restriction notice */}
+      {userRole === "viewer" && (
+        <Stack
+          $style={{
+            backgroundColor: colors.bgAlert.toHex(),
+            padding: "12px 16px",
+            borderRadius: "8px",
+            fontSize: "13px",
+          }}
+        >
+          You have <strong>viewer</strong> access to this plugin. You can view settings but cannot make changes.
+        </Stack>
+      )}
+      {userRole === "editor" && (
+        <Stack
+          $style={{
+            backgroundColor: colors.bgAlert.toHex(),
+            padding: "12px 16px",
+            borderRadius: "8px",
+            fontSize: "13px",
+          }}
+        >
+          You have <strong>editor</strong> access. You can edit title and description, but not the server endpoint.
+        </Stack>
+      )}
 
       {/* Basic Information */}
       <VStack
@@ -348,6 +487,7 @@ export const PluginEditPage = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Plugin title"
+            disabled={!canEdit}
           />
         </VStack>
 
@@ -360,17 +500,26 @@ export const PluginEditPage = () => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Plugin description"
             rows={4}
+            disabled={!canEdit}
           />
         </VStack>
 
         <VStack $style={{ gap: "8px" }}>
-          <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
-            Server Endpoint
-          </Stack>
+          <HStack $style={{ gap: "8px", alignItems: "center" }}>
+            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
+              Server Endpoint
+            </Stack>
+            {userRole === "editor" && (
+              <Stack $style={{ fontSize: "11px", color: colors.textTertiary.toHex() }}>
+                (Admin only)
+              </Stack>
+            )}
+          </HStack>
           <Input
             value={serverEndpoint}
             onChange={(e) => setServerEndpoint(e.target.value)}
             placeholder="https://your-server.com"
+            disabled={!canEdit || userRole === "editor"}
           />
         </VStack>
       </VStack>
@@ -424,7 +573,8 @@ export const PluginEditPage = () => {
         )}
       </VStack>
 
-      {/* API Keys */}
+      {/* API Keys (Admin only) */}
+      {isAdmin && (
       <VStack
         $style={{
           backgroundColor: colors.bgSecondary.toHex(),
@@ -554,6 +704,124 @@ export const PluginEditPage = () => {
           </Stack>
         )}
       </VStack>
+      )}
+
+      {/* Team Management (Admin only) */}
+      {isAdmin && (
+        <VStack
+          $style={{
+            backgroundColor: colors.bgSecondary.toHex(),
+            borderRadius: "12px",
+            border: `1px solid ${colors.borderLight.toHex()}`,
+            padding: "24px",
+            gap: "16px",
+          }}
+        >
+          <HStack $style={{ justifyContent: "space-between", alignItems: "center" }}>
+            <Stack $style={{ fontSize: "16px", fontWeight: "600" }}>
+              Team Members
+            </Stack>
+            <Button
+              kind="secondary"
+              onClick={() => setShowInviteModal(true)}
+            >
+              Invite Member
+            </Button>
+          </HStack>
+
+          {teamMembers.length > 0 ? (
+            <VStack $style={{ gap: "12px" }}>
+              {teamMembers.map((member) => {
+                const isRemoving = removingMember === member.publicKey;
+                const canRemove = !member.isCurrentUser && member.role !== "admin";
+
+                return (
+                  <HStack
+                    key={member.publicKey}
+                    $style={{
+                      backgroundColor: colors.bgTertiary.toHex(),
+                      borderRadius: "8px",
+                      padding: "12px 16px",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <VStack $style={{ gap: "4px", flex: 1 }}>
+                      <HStack $style={{ gap: "8px", alignItems: "center" }}>
+                        <Stack
+                          $style={{
+                            fontFamily: "monospace",
+                            fontSize: "13px",
+                            maxWidth: "200px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {member.publicKey}
+                        </Stack>
+                        {member.isCurrentUser && (
+                          <Stack
+                            $style={{
+                              backgroundColor: colors.bgAlert.toHex(),
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              fontSize: "10px",
+                            }}
+                          >
+                            You
+                          </Stack>
+                        )}
+                      </HStack>
+                      <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+                        Added via {member.addedVia.replace(/_/g, " ")}
+                        {member.addedBy && ` by ${member.addedBy.slice(0, 10)}...`}
+                      </Stack>
+                    </VStack>
+
+                    <HStack $style={{ gap: "12px", alignItems: "center" }}>
+                      <Stack
+                        $style={{
+                          backgroundColor: getRoleBadgeColor(member.role),
+                          color: colors.neutral50.toHex(),
+                          padding: "4px 12px",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {member.role}
+                      </Stack>
+
+                      {canRemove && (
+                        <Button
+                          kind="secondary"
+                          onClick={() => {
+                            Modal.confirm({
+                              title: "Remove Team Member?",
+                              content: "This member will lose access to this plugin immediately.",
+                              okText: "Remove",
+                              okType: "danger",
+                              cancelText: "Cancel",
+                              onOk: () => handleRemoveTeamMember(member.publicKey),
+                            });
+                          }}
+                          loading={isRemoving}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </HStack>
+                  </HStack>
+                );
+              })}
+            </VStack>
+          ) : (
+            <Stack $style={{ color: colors.textTertiary.toHex() }}>
+              No team members yet
+            </Stack>
+          )}
+        </VStack>
+      )}
 
       {/* Metadata */}
       <VStack
@@ -826,6 +1094,149 @@ export const PluginEditPage = () => {
             Use this key to authenticate API requests to your plugin. Include it in the
             Authorization header as: <code>Bearer {"{your-api-key}"}</code>
           </Stack>
+        </VStack>
+      </Modal>
+
+      {/* Create Invite Modal */}
+      <Modal
+        title="Invite Team Member"
+        open={showInviteModal}
+        onCancel={() => {
+          setShowInviteModal(false);
+          setInviteRole("viewer");
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            kind="secondary"
+            onClick={() => {
+              setShowInviteModal(false);
+              setInviteRole("viewer");
+            }}
+            disabled={creatingInvite}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="create"
+            onClick={handleCreateInvite}
+            loading={creatingInvite}
+          >
+            Create Invite Link
+          </Button>,
+        ]}
+      >
+        <VStack $style={{ gap: "20px", padding: "16px 0" }}>
+          <Stack $style={{ color: colors.textSecondary.toHex() }}>
+            Create an invite link to add a new team member. The link will expire in 8 hours and can only be used once.
+          </Stack>
+
+          <VStack $style={{ gap: "8px" }}>
+            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
+              Role
+            </Stack>
+            <HStack $style={{ gap: "12px" }}>
+              <Button
+                kind={inviteRole === "editor" ? "primary" : "secondary"}
+                onClick={() => setInviteRole("editor")}
+              >
+                Editor
+              </Button>
+              <Button
+                kind={inviteRole === "viewer" ? "primary" : "secondary"}
+                onClick={() => setInviteRole("viewer")}
+              >
+                Viewer
+              </Button>
+            </HStack>
+            <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
+              {inviteRole === "editor"
+                ? "Editors can view and modify plugin settings."
+                : "Viewers can only view plugin information and analytics."}
+            </Stack>
+          </VStack>
+        </VStack>
+      </Modal>
+
+      {/* Invite Link Modal */}
+      <Modal
+        title="Invite Link Created"
+        open={showInviteLinkModal}
+        onCancel={() => {
+          setShowInviteLinkModal(false);
+          setInviteLink(null);
+        }}
+        footer={[
+          <Button
+            key="copy"
+            onClick={() => {
+              if (inviteLink) {
+                copyToClipboard(inviteLink);
+              }
+            }}
+          >
+            Copy Link
+          </Button>,
+          <Button
+            key="done"
+            kind="secondary"
+            onClick={() => {
+              setShowInviteLinkModal(false);
+              setInviteLink(null);
+            }}
+          >
+            Done
+          </Button>,
+        ]}
+      >
+        <VStack $style={{ gap: "16px", padding: "16px 0" }}>
+          <Stack
+            $style={{
+              backgroundColor: colors.warning.toHex(),
+              color: colors.neutral900.toHex(),
+              padding: "12px 16px",
+              borderRadius: "8px",
+              fontSize: "13px",
+            }}
+          >
+            <strong>Important:</strong> This link will expire in 8 hours and can only be used once.
+          </Stack>
+
+          <VStack $style={{ gap: "8px" }}>
+            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
+              Share this link with the person you want to invite:
+            </Stack>
+            <HStack
+              $style={{
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "8px",
+                padding: "12px 16px",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <Stack
+                $style={{
+                  fontFamily: "monospace",
+                  fontSize: "12px",
+                  flex: 1,
+                  wordBreak: "break-all",
+                }}
+              >
+                {inviteLink}
+              </Stack>
+              <Button
+                kind="secondary"
+                onClick={() => {
+                  if (inviteLink) {
+                    copyToClipboard(inviteLink);
+                  }
+                }}
+              >
+                Copy
+              </Button>
+            </HStack>
+          </VStack>
         </VStack>
       </Modal>
     </VStack>

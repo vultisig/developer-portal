@@ -3,6 +3,7 @@ type RouteKey =
   | "pluginEdit"
   | "earnings"
   | "newPlugin"
+  | "acceptInvite"
   | "notFound"
   | "root";
 
@@ -14,6 +15,7 @@ export const routeTree = {
   },
   earnings: { path: "/earnings" },
   newPlugin: { path: "/new-plugin" },
+  acceptInvite: { path: "/invite/accept" },
   notFound: { path: "*" },
   root: { path: "/" },
 } satisfies Record<
