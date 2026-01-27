@@ -1,4 +1,4 @@
-import { Input, message, Modal, Select } from "antd";
+import { Input, message, Modal } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
@@ -38,7 +38,6 @@ export const PluginEditPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [serverEndpoint, setServerEndpoint] = useState("");
-  const [category, setCategory] = useState("");
 
   // Signing modal state
   const [showSigningModal, setShowSigningModal] = useState(false);
@@ -60,7 +59,6 @@ export const PluginEditPage = () => {
           setTitle(pluginData.title);
           setDescription(pluginData.description);
           setServerEndpoint(pluginData.serverEndpoint);
-          setCategory(pluginData.category);
         }
         setPricings(pricingData);
 
@@ -92,14 +90,12 @@ export const PluginEditPage = () => {
       title: plugin.title,
       description: plugin.description,
       serverEndpoint: plugin.serverEndpoint,
-      category: plugin.category,
     };
 
     const updated: Record<string, string> = {
       title,
       description,
       serverEndpoint,
-      category,
     };
 
     const updates = computeFieldUpdates(original, updated);
@@ -143,7 +139,6 @@ export const PluginEditPage = () => {
         title,
         description,
         serverEndpoint,
-        category,
         signature,
         signedMessage: updateMessage,
       });
@@ -269,34 +264,16 @@ export const PluginEditPage = () => {
           />
         </VStack>
 
-        <HStack $style={{ gap: "16px" }}>
-          <VStack $style={{ gap: "8px", flex: "1" }}>
-            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
-              Server Endpoint
-            </Stack>
-            <Input
-              value={serverEndpoint}
-              onChange={(e) => setServerEndpoint(e.target.value)}
-              placeholder="https://your-server.com"
-            />
-          </VStack>
-
-          <VStack $style={{ gap: "8px", width: "200px" }}>
-            <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
-              Category
-            </Stack>
-            <Select
-              value={category}
-              onChange={setCategory}
-              options={[
-                { value: "app", label: "App" },
-                { value: "defi", label: "DeFi" },
-                { value: "trading", label: "Trading" },
-                { value: "utility", label: "Utility" },
-              ]}
-            />
-          </VStack>
-        </HStack>
+        <VStack $style={{ gap: "8px" }}>
+          <Stack $style={{ fontSize: "13px", color: colors.textSecondary.toHex() }}>
+            Server Endpoint
+          </Stack>
+          <Input
+            value={serverEndpoint}
+            onChange={(e) => setServerEndpoint(e.target.value)}
+            placeholder="https://your-server.com"
+          />
+        </VStack>
       </VStack>
 
       {/* Pricing Information */}
