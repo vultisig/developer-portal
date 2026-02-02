@@ -1,4 +1,5 @@
 import { DatePicker, Select, Table, Tag } from "antd";
+import { TablePaginationConfig } from "antd";
 import { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
@@ -25,18 +26,24 @@ export const EarningsPage = () => {
     earningsByPlugin: Record<string, number>;
   } | null>(null);
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
   // Filters
   const [filters, setFilters] = useState<EarningsFilters>({});
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [earningsData, pluginsData, summaryData] = await Promise.all([
-          getEarnings(filters),
+        const [earningsResponse, pluginsData, summaryData] = await Promise.all([
+          getEarnings({ ...filters, page, limit: pageSize }),
           getPlugins(),
           getEarningsSummary(),
         ]);
-        setEarnings(earningsData);
+        setEarnings(earningsResponse.data);
+        setTotal(earningsResponse.total);
         setPlugins(pluginsData);
         setSummary(summaryData);
       } catch (error) {
@@ -47,7 +54,7 @@ export const EarningsPage = () => {
     };
 
     fetchData();
-  }, [filters]);
+  }, [filters, page, pageSize]);
 
   const columns: ColumnsType<EarningTransaction> = [
     {
@@ -318,9 +325,16 @@ export const EarningsPage = () => {
         dataSource={earnings}
         rowKey="id"
         pagination={{
-          pageSize: 10,
+          current: page,
+          pageSize: pageSize,
+          total: total,
           showSizeChanger: true,
-          showTotal: (total) => `Total ${total} transactions`,
+          showTotal: (t: number) => `Total ${t} transactions`,
+          pageSizeOptions: [10, 20, 50],
+        }}
+        onChange={(pagination: TablePaginationConfig) => {
+          setPage(pagination.current ?? 1);
+          setPageSize(pagination.pageSize ?? 10);
         }}
         style={{ width: "100%" }}
       />

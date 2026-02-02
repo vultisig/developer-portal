@@ -126,9 +126,19 @@ export type EarningsFilters = {
   dateFrom?: string;
   dateTo?: string;
   type?: string;
+  page?: number;
+  limit?: number;
 };
 
-export const getEarnings = async (filters?: EarningsFilters): Promise<EarningTransaction[]> => {
+export type EarningsResponse = {
+  data: EarningTransaction[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export const getEarnings = async (filters?: EarningsFilters): Promise<EarningsResponse> => {
   const params = new URLSearchParams();
 
   if (filters?.pluginId) {
@@ -141,10 +151,12 @@ export const getEarnings = async (filters?: EarningsFilters): Promise<EarningTra
     params.append("dateTo", filters.dateTo);
   }
 
-  const response = await apiClient.get<EarningTransaction[]>("/earnings", { params });
+  params.append("page", String(filters?.page ?? 1));
+  params.append("limit", String(filters?.limit ?? 10));
 
-  // Apply client-side filtering for status and type (not supported by backend query params)
-  let results = response.data;
+  const response = await apiClient.get<EarningsResponse>("/earnings", { params });
+
+  let results = response.data.data;
 
   if (filters?.status) {
     results = results.filter(e => e.status === filters.status);
@@ -154,7 +166,10 @@ export const getEarnings = async (filters?: EarningsFilters): Promise<EarningTra
     results = results.filter(e => e.type === filters.type);
   }
 
-  return results;
+  return {
+    ...response.data,
+    data: results,
+  };
 };
 
 export const getEarningsSummary = async (): Promise<{
