@@ -21,9 +21,9 @@ export const EarningsPage = () => {
   const [earnings, setEarnings] = useState<EarningTransaction[]>([]);
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [summary, setSummary] = useState<{
-    totalEarnings: number;
+    totalEarnings: string;
     totalTransactions: number;
-    earningsByPlugin: Record<string, number>;
+    earningsByPlugin: Record<string, string>;
   } | null>(null);
 
   // Pagination
@@ -86,9 +86,9 @@ export const EarningsPage = () => {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (amount: number, record) => (
+      render: (amount: string, record) => (
         <Stack $style={{ fontWeight: "600", color: colors.success.toHex() }}>
-          +{formatCurrency(amount, 4)} {record.asset.toUpperCase()}
+          +{formatCurrency(amount)} {record.asset.toUpperCase()}
         </Stack>
       ),
     },
@@ -210,7 +210,7 @@ export const EarningsPage = () => {
               Total Earnings
             </Stack>
             <Stack $style={{ fontSize: "28px", fontWeight: "600", color: colors.success.toHex() }}>
-              {formatCurrency(summary.totalEarnings, 4)}
+              {formatCurrency(summary.totalEarnings)}
             </Stack>
           </VStack>
 

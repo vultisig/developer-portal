@@ -21,7 +21,7 @@ export type PluginPricing = {
   asset: string;
   type: "per-tx" | "once" | "recurring";
   frequency: string | null;
-  amount: number;
+  amount: string;
   metric: string;
 };
 
@@ -49,7 +49,7 @@ export type EarningTransaction = {
   id: string;
   pluginId: string;
   pluginName: string;
-  amount: number;
+  amount: string;
   asset: string;
   type: "per-tx" | "once" | "recurring";
   createdAt: string;

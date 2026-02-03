@@ -173,14 +173,14 @@ export const getEarnings = async (filters?: EarningsFilters): Promise<EarningsRe
 };
 
 export const getEarningsSummary = async (): Promise<{
-  totalEarnings: number;
+  totalEarnings: string;
   totalTransactions: number;
-  earningsByPlugin: Record<string, number>;
+  earningsByPlugin: Record<string, string>;
 }> => {
   const response = await apiClient.get<{
-    totalEarnings: number;
+    totalEarnings: string;
     totalTransactions: number;
-    earningsByPlugin: Record<string, number>;
+    earningsByPlugin: Record<string, string>;
   }>("/earnings/summary");
   return response.data;
 };

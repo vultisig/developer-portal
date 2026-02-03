@@ -72,7 +72,7 @@ export const mockPricings: PluginPricing[] = [
     asset: "usdc",
     type: "per-tx",
     frequency: null,
-    amount: 10000, // 1 cent in micro units
+    amount: "0.01", // 1 cent
     metric: "fixed",
   },
   {
@@ -81,7 +81,7 @@ export const mockPricings: PluginPricing[] = [
     asset: "usdc",
     type: "once",
     frequency: null,
-    amount: 50000, // 5 cents
+    amount: "0.05", // 5 cents
     metric: "fixed",
   },
   {
@@ -90,7 +90,7 @@ export const mockPricings: PluginPricing[] = [
     asset: "usdc",
     type: "recurring",
     frequency: "monthly",
-    amount: 30000, // 3 cents
+    amount: "0.03", // 3 cents
     metric: "fixed",
   },
   {
@@ -99,7 +99,7 @@ export const mockPricings: PluginPricing[] = [
     asset: "usdc",
     type: "per-tx",
     frequency: null,
-    amount: 10000, // 1 cent
+    amount: "0.01", // 1 cent
     metric: "fixed",
   },
 ];
@@ -138,7 +138,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-001",
     pluginId: "vultisig-dca-0000",
     pluginName: "Vultisig DCA Plugin",
-    amount: 10000,
+    amount: "0.01",
     asset: "usdc",
     type: "per-tx",
     createdAt: "2024-04-10T14:32:00Z",
@@ -150,7 +150,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-002",
     pluginId: "vultisig-dca-0000",
     pluginName: "Vultisig DCA Plugin",
-    amount: 10000,
+    amount: "0.01",
     asset: "usdc",
     type: "per-tx",
     createdAt: "2024-04-10T12:15:00Z",
@@ -162,7 +162,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-003",
     pluginId: "vultisig-payroll-0000",
     pluginName: "Vultisig Payroll Plugin",
-    amount: 50000,
+    amount: "0.05",
     asset: "usdc",
     type: "once",
     createdAt: "2024-04-09T10:00:00Z",
@@ -174,7 +174,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-004",
     pluginId: "vultisig-payroll-0000",
     pluginName: "Vultisig Payroll Plugin",
-    amount: 30000,
+    amount: "0.03",
     asset: "usdc",
     type: "recurring",
     createdAt: "2024-04-01T00:00:00Z",
@@ -186,7 +186,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-005",
     pluginId: "vultisig-copytrader-0000",
     pluginName: "Vultisig Copytrader Plugin",
-    amount: 10000,
+    amount: "0.01",
     asset: "usdc",
     type: "per-tx",
     createdAt: "2024-04-08T16:45:00Z",
@@ -198,7 +198,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-006",
     pluginId: "vultisig-dca-0000",
     pluginName: "Vultisig DCA Plugin",
-    amount: 10000,
+    amount: "0.01",
     asset: "usdc",
     type: "per-tx",
     createdAt: "2024-04-07T09:20:00Z",
@@ -210,7 +210,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-007",
     pluginId: "vultisig-copytrader-0000",
     pluginName: "Vultisig Copytrader Plugin",
-    amount: 10000,
+    amount: "0.01",
     asset: "usdc",
     type: "per-tx",
     createdAt: "2024-04-06T11:30:00Z",
@@ -222,7 +222,7 @@ export const mockEarnings: EarningTransaction[] = [
     id: "tx-008",
     pluginId: "vultisig-payroll-0000",
     pluginName: "Vultisig Payroll Plugin",
-    amount: 30000,
+    amount: "0.03",
     asset: "usdc",
     type: "recurring",
     createdAt: "2024-03-01T00:00:00Z",

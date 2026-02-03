@@ -80,7 +80,11 @@ export const formatDate = (dateString: string): string => {
   });
 };
 
-export const formatCurrency = (amount: number, decimals = 6): string => {
+export const formatCurrency = (amount: string | number, decimals = 6): string => {
+  if (typeof amount === "string") {
+    const parsed = parseFloat(amount);
+    return isNaN(parsed) ? "$0.00" : `$${parsed.toFixed(2)}`;
+  }
   const value = amount / Math.pow(10, decimals);
   return `$${value.toFixed(2)}`;
 };

@@ -629,7 +629,7 @@ export const PluginEditPage = () => {
                   </Stack>
                 </VStack>
                 <Stack $style={{ fontSize: "18px", fontWeight: "600" }}>
-                  {formatCurrency(pricing.amount, 4)}
+                  {formatCurrency(pricing.amount)}
                 </Stack>
               </HStack>
             ))}
