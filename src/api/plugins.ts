@@ -1,4 +1,4 @@
-import { EarningTransaction, InviteInfo, Plugin, PluginApiKey, PluginPricing, TeamMember, TeamMemberRole } from "@/utils/types";
+import { EarningsSummary, EarningTransaction, InviteInfo, Plugin, PluginApiKey, PluginPricing, TeamMember, TeamMemberRole } from "@/utils/types";
 
 import { apiClient } from "./client";
 
@@ -172,16 +172,8 @@ export const getEarnings = async (filters?: EarningsFilters): Promise<EarningsRe
   };
 };
 
-export const getEarningsSummary = async (): Promise<{
-  totalEarnings: string;
-  totalTransactions: number;
-  earningsByPlugin: Record<string, string>;
-}> => {
-  const response = await apiClient.get<{
-    totalEarnings: string;
-    totalTransactions: number;
-    earningsByPlugin: Record<string, string>;
-  }>("/earnings/summary");
+export const getEarningsSummary = async (): Promise<EarningsSummary> => {
+  const response = await apiClient.get<EarningsSummary>("/earnings/summary");
   return response.data;
 };
 

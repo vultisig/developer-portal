@@ -10,7 +10,7 @@ import { useCore } from "@/hooks/useCore";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { formatCurrency, formatDate, truncateAddress } from "@/utils/functions";
-import { EarningTransaction, Plugin } from "@/utils/types";
+import { EarningTransaction, EarningsSummary, Plugin } from "@/utils/types";
 
 const { RangePicker } = DatePicker;
 
@@ -20,11 +20,7 @@ export const EarningsPage = () => {
   const [loading, setLoading] = useState(true);
   const [earnings, setEarnings] = useState<EarningTransaction[]>([]);
   const [plugins, setPlugins] = useState<Plugin[]>([]);
-  const [summary, setSummary] = useState<{
-    totalEarnings: string;
-    totalTransactions: number;
-    earningsByPlugin: Record<string, string>;
-  } | null>(null);
+  const [summary, setSummary] = useState<EarningsSummary | null>(null);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -88,7 +84,7 @@ export const EarningsPage = () => {
       key: "amount",
       render: (amount: string, record) => (
         <Stack $style={{ fontWeight: "600", color: colors.success.toHex() }}>
-          +{formatCurrency(amount)} {record.asset.toUpperCase()}
+          +{formatCurrency(amount, record.fee_asset.decimals)} {record.fee_asset.symbol}
         </Stack>
       ),
     },
@@ -210,7 +206,7 @@ export const EarningsPage = () => {
               Total Earnings
             </Stack>
             <Stack $style={{ fontSize: "28px", fontWeight: "600", color: colors.success.toHex() }}>
-              {formatCurrency(summary.totalEarnings)}
+              {formatCurrency(summary.totalEarnings.amount, summary.totalEarnings.fee_asset.decimals)}
             </Stack>
           </VStack>
 

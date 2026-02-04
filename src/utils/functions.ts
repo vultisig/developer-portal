@@ -81,11 +81,11 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const formatCurrency = (amount: string | number, decimals = 6): string => {
-  if (typeof amount === "string") {
-    const parsed = parseFloat(amount);
-    return isNaN(parsed) ? "$0.00" : `$${parsed.toFixed(2)}`;
+  const parsed = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (isNaN(parsed)) {
+    return "$0.00";
   }
-  const value = amount / Math.pow(10, decimals);
+  const value = parsed / Math.pow(10, decimals);
   return `$${value.toFixed(2)}`;
 };
 
