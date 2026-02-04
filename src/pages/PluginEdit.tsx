@@ -625,11 +625,11 @@ export const PluginEditPage = () => {
                     {pricing.frequency && ` (${pricing.frequency})`}
                   </Stack>
                   <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
-                    {pricing.asset.toUpperCase()} - {pricing.metric}
+                    {pricing.fee_asset.symbol} - {pricing.metric}
                   </Stack>
                 </VStack>
                 <Stack $style={{ fontSize: "18px", fontWeight: "600" }}>
-                  {formatCurrency(pricing.amount)}
+                  {formatCurrency(pricing.amount, pricing.fee_asset.decimals)}
                 </Stack>
               </HStack>
             ))}

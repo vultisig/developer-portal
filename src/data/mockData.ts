@@ -1,5 +1,13 @@
 import { EarningTransaction, Plugin, PluginApiKey, PluginPricing } from "@/utils/types";
 
+// Default USDC fee asset for mock data
+const mockFeeAsset = {
+  symbol: "USDC",
+  addr: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  decimals: 6,
+  network: "ethereum",
+};
+
 // Mock Plugins based on seed data
 export const mockPlugins: Plugin[] = [
   {
@@ -64,42 +72,42 @@ export const mockPlugins: Plugin[] = [
   },
 ];
 
-// Mock Pricing based on seed data
+// Mock Pricing based on seed data (amounts in minimal units)
 export const mockPricings: PluginPricing[] = [
   {
     id: "00000000-0000-0000-0000-000000000002",
     pluginId: "vultisig-dca-0000",
-    asset: "usdc",
     type: "per-tx",
     frequency: null,
-    amount: "0.01", // 1 cent
+    amount: "10000", // 0.01 USDC
+    fee_asset: mockFeeAsset,
     metric: "fixed",
   },
   {
     id: "00000000-0000-0000-0000-000000000003",
     pluginId: "vultisig-payroll-0000",
-    asset: "usdc",
     type: "once",
     frequency: null,
-    amount: "0.05", // 5 cents
+    amount: "50000", // 0.05 USDC
+    fee_asset: mockFeeAsset,
     metric: "fixed",
   },
   {
     id: "00000000-0000-0000-0000-000000000004",
     pluginId: "vultisig-payroll-0000",
-    asset: "usdc",
     type: "recurring",
     frequency: "monthly",
-    amount: "0.03", // 3 cents
+    amount: "30000", // 0.03 USDC
+    fee_asset: mockFeeAsset,
     metric: "fixed",
   },
   {
     id: "00000000-0000-0000-0000-000000000005",
     pluginId: "vultisig-copytrader-0000",
-    asset: "usdc",
     type: "per-tx",
     frequency: null,
-    amount: "0.01", // 1 cent
+    amount: "10000", // 0.01 USDC
+    fee_asset: mockFeeAsset,
     metric: "fixed",
   },
 ];
@@ -131,14 +139,6 @@ export const mockApiKeys: PluginApiKey[] = [
     status: 1,
   },
 ];
-
-// Default USDC fee asset for mock data
-const mockFeeAsset = {
-  symbol: "USDC",
-  addr: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  decimals: 6,
-  network: "ethereum",
-};
 
 // Mock Earning Transactions (amounts in minimal units, e.g., 10000 = 0.01 USDC)
 export const mockEarnings: EarningTransaction[] = [

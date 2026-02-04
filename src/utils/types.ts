@@ -18,10 +18,10 @@ export type Plugin = {
 export type PluginPricing = {
   id: string;
   pluginId: string;
-  asset: string;
   type: "per-tx" | "once" | "recurring";
   frequency: string | null;
   amount: string;
+  fee_asset: FeeAsset;
   metric: string;
 };
 
