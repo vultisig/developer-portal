@@ -10,7 +10,7 @@ import { useCore } from "@/hooks/useCore";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { formatCurrency, formatDate, truncateAddress } from "@/utils/functions";
-import { EarningTransaction, EarningsSummary, Plugin } from "@/utils/types";
+import { EarningsSummary, EarningTransaction, Plugin } from "@/utils/types";
 
 const { RangePicker } = DatePicker;
 
