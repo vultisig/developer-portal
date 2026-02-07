@@ -18,10 +18,10 @@ export type Plugin = {
 export type PluginPricing = {
   id: string;
   pluginId: string;
-  asset: string;
   type: "per-tx" | "once" | "recurring";
   frequency: string | null;
-  amount: number;
+  amount: string;
+  fee_asset: FeeAsset;
   metric: string;
 };
 
@@ -45,17 +45,35 @@ export type PluginApiKey = {
   status: number;
 };
 
+export type FeeAsset = {
+  symbol: string;
+  addr: string;
+  decimals: number;
+  network: string;
+};
+
 export type EarningTransaction = {
   id: string;
   pluginId: string;
   pluginName: string;
-  amount: number;
-  asset: string;
+  amount: string;
+  fee_asset: FeeAsset;
   type: "per-tx" | "once" | "recurring";
   createdAt: string;
   fromAddress: string;
   txHash: string;
   status: "pending" | "completed" | "failed";
+};
+
+export type PluginEarning = {
+  amount: string;
+  fee_asset: FeeAsset;
+};
+
+export type EarningsSummary = {
+  totalEarnings: PluginEarning;
+  totalTransactions: number;
+  earningsByPlugin: Record<string, PluginEarning>;
 };
 
 export type Tag = {

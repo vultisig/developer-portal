@@ -93,7 +93,7 @@ export const PluginsPage = () => {
           {record.pricings.length > 0 ? (
             record.pricings.map((pricing) => (
               <Stack key={pricing.id} $style={{ fontSize: "12px" }}>
-                {formatCurrency(pricing.amount, 4)} {pricing.asset.toUpperCase()} / {pricing.type}
+                {formatCurrency(pricing.amount, pricing.fee_asset.decimals)} {pricing.fee_asset.symbol} / {pricing.type}
                 {pricing.frequency && ` (${pricing.frequency})`}
               </Stack>
             ))
