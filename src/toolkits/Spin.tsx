@@ -1,4 +1,4 @@
-import { Spin as DefaultSpin, SpinProps } from "antd";
+﻿import { Spin as DefaultSpin, SpinProps } from "antd";
 import { FC } from "react";
 import styled, { css } from "styled-components";
 

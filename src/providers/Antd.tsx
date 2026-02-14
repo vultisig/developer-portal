@@ -41,47 +41,28 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
         fontFamily: "inherit",
       },
       components: {
-        Dropdown: {
-          fontSize: 16,
-          fontSizeSM: 20,
-          paddingBlock: 8,
+        Form: {
+          labelColor: colors.textTertiary.toHex(),
         },
         Input: {
           activeBorderColor: colors.borderNormal.toHex(),
           activeShadow: "none",
+          colorBgContainer: colors.bgSecondary.toHex(),
+          colorTextPlaceholder: colors.textTertiary.toHex(),
           hoverBorderColor: colors.borderNormal.toHex(),
-        },
-        InputNumber: {
-          activeBorderColor: colors.borderNormal.toHex(),
-          activeShadow: "none",
-          hoverBorderColor: colors.borderNormal.toHex(),
-        },
-        Layout: {
-          headerBg: colors.bgSecondary.toHex(),
-          headerPadding: 0,
-        },
-        Menu: {
-          itemBg: "transparent",
-          itemSelectedBg: colors.bgTertiary.toHex(),
-          itemSelectedColor: colors.textPrimary.toHex(),
-          itemHoverBg: colors.bgTertiary.toHex(),
-          itemHoverColor: colors.textPrimary.toHex(),
-        },
-        Modal: {
-          contentBg: colors.bgPrimary.toHex(),
-          headerBg: "transparent",
+          inputFontSize: 16,
+          paddingBlock: 16,
         },
         Select: {
           activeBorderColor: colors.borderNormal.toHex(),
           activeOutlineColor: "transparent",
+          colorBgContainer: colors.bgSecondary.toHex(),
+          colorTextPlaceholder: colors.textTertiary.toHex(),
+          controlHeight: 56,
           hoverBorderColor: colors.borderNormal.toHex(),
-          optionLineHeight: 2,
+          optionHeight: 36,
+          optionLineHeight: "28px",
           optionPadding: "4px 12px",
-        },
-        Table: {
-          borderColor: colors.borderLight.toHex(),
-          headerBg: colors.bgTertiary.toHex(),
-          headerSplitColor: colors.borderNormal.toHex(),
         },
       },
     };

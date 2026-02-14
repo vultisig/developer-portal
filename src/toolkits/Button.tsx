@@ -30,11 +30,15 @@ const StyledButton = styled.div<{
   $ghost: boolean;
   $kind: Kind;
 }>`
-  border: none;
-  display: flex;
   align-items: center;
-  border-radius: 44px;
+  border-radius: 48px;
+  border: none;
+  box-shadow:
+    0px 1px 1px 0px ${({ theme }) => theme.neutral50.toRgba(0.1)} inset,
+    0px -1px 0.5px 0px ${({ theme }) => theme.neutral900.toRgba(0.1)} inset;
   cursor: ${({ $disabled }) => ($disabled ? "default" : "pointer")};
+  display: flex;
+  font-size: 14px;
   font-family: inherit;
   font-weight: 500;
   gap: 8px;
@@ -45,7 +49,7 @@ const StyledButton = styled.div<{
     return (
       !$ghost &&
       css`
-        height: 44px;
+        height: 48px;
         padding: 0 24px;
       `
     );
@@ -60,87 +64,87 @@ const StyledButton = styled.div<{
           color: ${theme.buttonDisabledText.toHex()};
         `
       : $ghost
-      ? css`
-          background-color: transparent;
-          color: currentColor;
+        ? css`
+            background-color: transparent;
+            color: currentColor;
 
-          &:hover {
+            &:hover {
+              ${match($kind, {
+                danger: () => css`
+                  color: ${theme.error.toHex()};
+                `,
+                info: () => css`
+                  color: ${theme.info.toHex()};
+                `,
+                primary: () => css`
+                  color: ${theme.buttonPrimary.toHex()};
+                `,
+                secondary: () => css`
+                  color: ${theme.buttonSecondary.toHex()};
+                `,
+                success: () => css`
+                  color: ${theme.success.toHex()};
+                `,
+                warning: () => css`
+                  color: ${theme.warning.toHex()};
+                `,
+              })}
+            }
+          `
+        : css`
             ${match($kind, {
               danger: () => css`
-                color: ${theme.error.toHex()};
+                background-color: ${theme.error.toHex()};
+                color: ${theme.buttonText.toHex()};
               `,
               info: () => css`
-                color: ${theme.info.toHex()};
+                background-color: ${theme.info.toHex()};
+                color: ${theme.buttonText.toHex()};
               `,
               primary: () => css`
-                color: ${theme.buttonPrimary.toHex()};
-              `,
-              secondary: () => css`
-                color: ${theme.buttonSecondary.toHex()};
-              `,
-              success: () => css`
-                color: ${theme.success.toHex()};
-              `,
-              warning: () => css`
-                color: ${theme.warning.toHex()};
-              `,
-            })}
-          }
-        `
-      : css`
-          ${match($kind, {
-            danger: () => css`
-              background-color: ${theme.error.toHex()};
-              color: ${theme.buttonText.toHex()};
-            `,
-            info: () => css`
-              background-color: ${theme.info.toHex()};
-              color: ${theme.buttonText.toHex()};
-            `,
-            primary: () => css`
-              background-color: ${theme.buttonPrimary.toHex()};
-              color: ${theme.buttonText.toHex()};
-            `,
-            secondary: () => css`
-              background-color: ${theme.buttonSecondary.toHex()};
-              color: ${theme.textPrimary.toHex()};
-            `,
-            success: () => css`
-              background-color: ${theme.success.toHex()};
-              color: ${theme.buttonText.toHex()};
-            `,
-            warning: () => css`
-              background-color: ${theme.warning.toHex()};
-              color: ${theme.buttonText.toHex()};
-            `,
-          })}
-
-          &:hover {
-            ${match($kind, {
-              danger: () => css`
-                background-color: ${theme.error.lighten(5).toHex()};
-              `,
-              info: () => css`
-                background-color: ${theme.info.lighten(5).toHex()};
-              `,
-              primary: () => css`
-                background-color: ${({ theme }) =>
-                  theme.buttonPrimaryHover.toHex()};
+                background-color: ${theme.buttonPrimary.toHex()};
                 color: ${theme.buttonText.toHex()};
               `,
               secondary: () => css`
-                background-color: ${({ theme }) =>
-                  theme.buttonSecondaryHover.toHex()};
+                background-color: ${theme.buttonSecondary.toHex()};
+                color: ${theme.textPrimary.toHex()};
               `,
               success: () => css`
-                background-color: ${theme.success.lighten(5).toHex()};
+                background-color: ${theme.success.toHex()};
+                color: ${theme.buttonText.toHex()};
               `,
               warning: () => css`
-                background-color: ${theme.warning.lighten(5).toHex()};
+                background-color: ${theme.warning.toHex()};
+                color: ${theme.neutral800.toHex()};
               `,
             })}
-          }
-        `;
+
+            &:hover {
+              ${match($kind, {
+                danger: () => css`
+                  background-color: ${theme.error.lighten(5).toHex()};
+                `,
+                info: () => css`
+                  background-color: ${theme.info.lighten(5).toHex()};
+                `,
+                primary: () => css`
+                  background-color: ${({ theme }) =>
+                    theme.buttonPrimaryHover.toHex()};
+                  color: ${theme.buttonText.toHex()};
+                `,
+                secondary: () => css`
+                  background-color: ${({ theme }) =>
+                    theme.buttonSecondaryHover.toHex()};
+                `,
+                success: () => css`
+                  background-color: ${theme.success.lighten(5).toHex()};
+                `,
+                warning: () => css`
+                  background-color: ${theme.warning.lighten(5).toHex()};
+                `,
+              })}
+            }
+          `;
   }}
 `;
 
@@ -170,8 +174,8 @@ export const Button: FC<ButtonProps> = (props) => {
       {...(disabled
         ? { as: "span" }
         : href
-        ? { as: Link, state, to: href, target }
-        : { as: "button", type })}
+          ? { as: Link, state, to: href, target }
+          : { as: "button", type })}
     >
       {loading ? <Spin size="small" /> : icon}
       {children}

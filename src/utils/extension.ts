@@ -1,67 +1,59 @@
+import { Vault } from "@/utils/types";
+
+type VultisigProviderItem = {
+  request: <T>(params: { method: string; params?: unknown[] }) => Promise<T>;
+};
+
+type VultisigProvider = {
+  ethereum: VultisigProviderItem;
+  bitcoin: VultisigProviderItem;
+  solana: VultisigProviderItem;
+  ripple: VultisigProviderItem;
+  zcash: VultisigProviderItem;
+  plugin: VultisigProviderItem;
+  getVault: () => Promise<Vault>;
+};
+
 declare global {
   interface Window {
-    vultisig: {
-      ethereum: {
-        request: <T>(args: {
-          method: string;
-          params?: unknown[];
-        }) => Promise<T>;
-      };
-      getVault: () => Promise<{
-        hexChainCode: string;
-        isFastVault: boolean;
-        localPartyId: string;
-        name: string;
-        parties: string[];
-        publicKeyEcdsa: string;
-        publicKeyEddsa: string;
-        uid: string;
-      }>;
-      plugin: {
-        request: <T>(args: { method: string; params?: unknown[] }) => Promise<T>;
-      };
-    };
+    vultisig: VultisigProvider;
   }
 }
 
 export const connect = async () => {
-  await isAvailable();
+  const [account] = await window.vultisig.ethereum.request<string[]>({
+    method: "eth_requestAccounts",
+    params: [{ preselectFastVault: true }],
+  });
 
-  try {
-    const [account]: string[] = await window.vultisig.ethereum.request({
-      method: "eth_requestAccounts",
-      params: [{ preselectFastVault: true }],
-    });
-
-    return account;
-  } catch {
-    throw new Error("Connection failed");
-  }
+  return account;
 };
 
 export const disconnect = async () => {
-  await isAvailable();
-
   await window.vultisig.ethereum.request({
     method: "wallet_revokePermissions",
   });
 };
 
 export const getVault = async () => {
-  await isAvailable();
+  try {
+    const vault = await window.vultisig.getVault();
 
-  const vault = await window.vultisig.getVault();
+    if (!vault) throw new Error("No vault found");
 
-  if (vault) {
     if (!vault.hexChainCode || !vault.publicKeyEcdsa)
       throw new Error("Missing required vault data");
 
     if (!vault.isFastVault)
-      throw new Error("Only Fast Vaults can connect to the Developer Portal");
+      throw new Error(
+        "Your vault type isn't supported. Please use a Fast Vault",
+      );
 
     return vault;
-  } else {
-    throw new Error("Vault not found");
+  } catch (error) {
+    await disconnect();
+
+    throw error;
   }
 };
 
@@ -74,47 +66,17 @@ export const isAvailable = async () => {
 export const personalSign = async (
   address: string,
   message: string,
-  type: "connect" | "policy",
-  pluginId?: string
+  appId?: string,
 ) => {
-  await isAvailable();
-
   const signature = await window.vultisig.plugin.request<
     string | { error?: string }
   >({
     method: "personal_sign",
-    params: [message, address, type, ...(pluginId ? [pluginId] : [])],
+    params: [message, address, ...(appId ? ["policy", appId] : ["connect"])],
   });
 
   if (typeof signature === "object" && signature?.error)
     throw new Error(signature.error);
 
   return signature as string;
-};
-
-/**
- * Sign typed data using EIP-712
- */
-export const signTypedData = async (
-  address: string,
-  typedData: {
-    types: Record<string, Array<{ name: string; type: string }>>;
-    primaryType: string;
-    domain: Record<string, unknown>;
-    message: Record<string, unknown>;
-  }
-): Promise<string> => {
-  await isAvailable();
-
-  // EIP-712 signing via eth_signTypedData_v4
-  const signature = await window.vultisig.ethereum.request<string>({
-    method: "eth_signTypedData_v4",
-    params: [address, JSON.stringify(typedData)],
-  });
-
-  if (typeof signature === "object" && (signature as { error?: string })?.error) {
-    throw new Error((signature as { error: string }).error);
-  }
-
-  return signature;
 };

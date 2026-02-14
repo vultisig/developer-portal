@@ -1,46 +1,38 @@
-import { FC, ReactNode } from "react";
-import {
-  createBrowserRouter,
-  Navigate,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import { useCore } from "@/hooks/useCore";
+import { AuthLayout } from "@/layouts/Auth";
 import { DefaultLayout } from "@/layouts/Default";
-import { AcceptInvitePage } from "@/pages/AcceptInvite";
-import { EarningsPage } from "@/pages/Earnings";
-import { NewPluginPage } from "@/pages/NewPlugin";
+import { ConnectPage } from "@/pages/Connect";
+import { InternalErrorPage } from "@/pages/InternalError";
+import { MainPage } from "@/pages/Main";
 import { NotFoundPage } from "@/pages/NotFound";
-import { PluginEditPage } from "@/pages/PluginEdit";
-import { PluginsPage } from "@/pages/Plugins";
+import { ProjectCategoriesPage } from "@/pages/ProjectCategories";
+import { ProjectManagementPage } from "@/pages/ProjectManagement";
 import { routeTree } from "@/utils/routes";
-
-const ProtectedRoute: FC<{ children: ReactNode }> = ({ children }) => {
-  const { vault } = useCore();
-
-  return !vault ? <Navigate to={routeTree.root.path} replace /> : children;
-};
 
 export const Routes = () => {
   const router = createBrowserRouter([
     {
       path: routeTree.root.path,
       element: <DefaultLayout />,
+      children: [{ index: true, element: <MainPage /> }],
+      errorElement: <InternalErrorPage />,
+    },
+    {
+      path: routeTree.account.path,
+      element: <AuthLayout />,
       children: [
-        { index: true, element: <Navigate to={routeTree.plugins.path} replace /> },
-        { path: routeTree.plugins.path, element: <PluginsPage /> },
+        { index: true, element: <ConnectPage /> },
         {
-          path: routeTree.pluginEdit.path,
-          element: (
-            <ProtectedRoute>
-              <PluginEditPage />
-            </ProtectedRoute>
-          ),
+          path: routeTree.projectCategories.path,
+          element: <ProjectCategoriesPage />,
         },
-        { path: routeTree.earnings.path, element: <EarningsPage /> },
-        { path: routeTree.newPlugin.path, element: <NewPluginPage /> },
-        { path: routeTree.acceptInvite.path, element: <AcceptInvitePage /> },
+        {
+          path: routeTree.projectManagement.path,
+          element: <ProjectManagementPage />,
+        },
       ],
+      errorElement: <InternalErrorPage />,
     },
     { path: routeTree.notFound.path, element: <NotFoundPage /> },
   ]);

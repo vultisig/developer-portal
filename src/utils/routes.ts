@@ -1,22 +1,21 @@
 type RouteKey =
-  | "plugins"
-  | "pluginEdit"
-  | "earnings"
-  | "newPlugin"
-  | "acceptInvite"
+  | "account"
   | "notFound"
+  | "projectCategories"
+  | "projectManagement"
   | "root";
 
 export const routeTree = {
-  plugins: { path: "/plugins" },
-  pluginEdit: {
-    link: (id: string) => `/plugins/${id}/edit`,
-    path: "/plugins/:id/edit",
-  },
-  earnings: { path: "/earnings" },
-  newPlugin: { path: "/new-plugin" },
-  acceptInvite: { path: "/invite/accept" },
+  account: { path: "/account" },
   notFound: { path: "*" },
+  projectCategories: {
+    path: "/account/projects/:projectId/categories",
+    link: (projectId: string) => `/account/projects/${projectId}/categories`,
+  },
+  projectManagement: {
+    path: `/account/projects/:projectId`,
+    link: (projectId: string) => `/account/projects/${projectId}`,
+  },
   root: { path: "/" },
 } satisfies Record<
   RouteKey,

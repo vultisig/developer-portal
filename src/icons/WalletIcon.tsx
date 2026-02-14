@@ -1,0 +1,16 @@
+import { FC, SVGProps } from "react";
+
+export const WalletIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    height="1em"
+    stroke="currentColor"
+    strokeLinejoin="round"
+    strokeWidth="1.5"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path d="M2.75 7.75V6.75C2.75 5.64543 3.64543 4.75 4.75 4.75H19.25C20.3546 4.75 21.25 5.64543 21.25 6.75V7.75M2.75 7.75H21.25M2.75 7.75V10.75M21.25 7.75V10.75M2.75 10.75V17.25C2.75 18.3546 3.64543 19.25 4.75 19.25H19.25C20.3546 19.25 21.25 18.3546 21.25 17.25V10.75M2.75 10.75H8.75V11.25C8.75 12.3546 9.64543 13.25 10.75 13.25H13.25C14.3546 13.25 15.25 12.3546 15.25 11.25V10.75H21.25" />
+  </svg>
+);

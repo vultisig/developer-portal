@@ -1,38 +1,37 @@
-import { useNavigate } from "react-router-dom";
+import { Layout, Result } from "antd";
 import { useTheme } from "styled-components";
 
+import { useGoBack } from "@/hooks/useGoBack";
 import { Button } from "@/toolkits/Button";
-import { Stack, VStack } from "@/toolkits/Stack";
+import { HStack, VStack } from "@/toolkits/Stack";
 import { routeTree } from "@/utils/routes";
 
 export const NotFoundPage = () => {
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const colors = useTheme();
 
   return (
     <VStack
+      as={Layout}
       $style={{
         alignItems: "center",
+        backgroundColor: colors.bgPrimary.toHex(),
         justifyContent: "center",
-        flex: "1",
-        gap: "24px",
-        minHeight: "60vh",
+        height: "100%",
       }}
     >
-      <Stack $style={{ fontSize: "72px", fontWeight: "700", color: colors.textTertiary.toHex() }}>
-        404
-      </Stack>
-      <VStack $style={{ gap: "8px", alignItems: "center" }}>
-        <Stack $style={{ fontSize: "24px", fontWeight: "600" }}>
-          Page Not Found
-        </Stack>
-        <Stack $style={{ color: colors.textTertiary.toHex() }}>
-          The page you're looking for doesn't exist or has been moved.
-        </Stack>
-      </VStack>
-      <Button onClick={() => navigate(routeTree.plugins.path)}>
-        Go to Plugins
-      </Button>
+      <Result
+        status="404"
+        title="404"
+        subTitle="Sorry, the page you visited does not exist."
+        extra={
+          <HStack $style={{ justifyContent: "center" }}>
+            <Button onClick={() => goBack(routeTree.root.path)}>
+              Back Home
+            </Button>
+          </HStack>
+        }
+      />
     </VStack>
   );
 };

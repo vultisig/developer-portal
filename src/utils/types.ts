@@ -1,111 +1,223 @@
 import type * as CSS from "csstype";
 
-export type CSSProperties = CSS.Properties<string>;
+import { Chain } from "@/utils/chain";
 
-export type Plugin = {
-  id: string;
-  title: string;
-  description: string;
-  serverEndpoint: string;
-  category: string;
-  createdAt: string;
-  updatedAt: string;
-  logoUrl?: string;
-  thumbnailUrl?: string;
-  publicKey?: string;
-};
-
-export type PluginPricing = {
-  id: string;
-  pluginId: string;
-  type: "per-tx" | "once" | "recurring";
-  frequency: string | null;
-  amount: string;
-  fee_asset: FeeAsset;
-  metric: string;
-};
-
-export type PluginPolicy = {
-  id: string;
-  publicKey: string;
-  pluginId: string;
-  pluginVersion: string;
-  policyVersion: number;
-  signature: string;
-  recipe: string;
-  active: boolean;
-};
-
-export type PluginApiKey = {
-  id: string;
-  pluginId: string;
-  apikey: string;
-  createdAt: string;
-  expiresAt: string | null;
+export type APIResponse<T> = {
   status: number;
+  data: T;
+  timestamp: string;
+  version: string;
 };
 
-export type FeeAsset = {
-  symbol: string;
-  addr: string;
-  decimals: number;
-  network: string;
-};
-
-export type EarningTransaction = {
+export type PluginImage = {
   id: string;
-  pluginId: string;
-  pluginName: string;
-  amount: string;
-  fee_asset: FeeAsset;
-  type: "per-tx" | "once" | "recurring";
+  url: string;
+  sort_order: number;
+};
+
+export type App = {
+  audited: boolean;
+  avgRating: number;
+  categoryId: string;
   createdAt: string;
-  fromAddress: string;
-  txHash: string;
-  status: "pending" | "completed" | "failed";
+  description: string;
+  faqs: { answer: string; question: string }[];
+  features: string[];
+  id: string;
+  images: PluginImage[];
+  installations: number;
+  logoUrl: string;
+  pricing: AppPricing[];
+  ratesCount: number;
+  ratings: { count: number; rating: number }[];
+  serverEndpoint: string;
+  thumbnailUrl: string;
+  title: string;
+  updatedAt: string;
 };
 
-export type PluginEarning = {
-  amount: string;
-  fee_asset: FeeAsset;
+export type AppFilters = {
+  categoryId?: string;
+  sort?: string;
+  term?: string;
 };
 
-export type EarningsSummary = {
-  totalEarnings: PluginEarning;
-  totalTransactions: number;
-  earningsByPlugin: Record<string, PluginEarning>;
+export type AppAutomation = {
+  active: boolean;
+  id: string;
+  pluginVersion: string;
+  pluginId: string;
+  policyVersion: number;
+  publicKey: string;
+  recipe: string;
+  signature?: string;
 };
 
-export type Tag = {
+export type AppPricing = {
+  amount: number;
+  asset: string;
+  createdAt: string;
+  frequency: string;
+  id: string;
+  metric: string;
+  pluginId: string;
+  type: "once" | "recurring" | "per-tx";
+  updatedAt: string;
+};
+
+export type AuthToken = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type Billing = {
+  appName: string;
+  nextPayment?: string;
+  pluginId: string;
+  pricing: string;
+  startDate: string;
+  totalFees: string;
+};
+
+export type Category = {
   id: string;
   name: string;
 };
 
-export type Review = {
+export type Configuration = {
+  properties: Record<string, FieldProps>;
+  required: string[];
+};
+
+export type CSSProperties = CSS.Properties<string>;
+
+export type Definitions = Record<string, Configuration>;
+
+export type FeeAppStatus = {
+  balance: number;
+  fees: string[];
+  isInstalled: boolean;
+  isTrialActive: boolean;
+  publicKey: string;
+  trialRemaining: number;
+  unpaidAmount: number;
+};
+
+export type FeeTransaction = {
+  amount: string;
+  appName: string;
+  createdAt: string;
+  feeAsset: {
+    addr: string;
+    decimals: number;
+    network: string;
+    symbol: string;
+  };
   id: string;
   pluginId: string;
+  policyId: string;
   publicKey: string;
-  rating: number;
+  status: "PENDING";
+  transactionType: string;
+};
+
+export type FieldProps = {
+  default?: string;
+  description?: string;
+  enum?: string[];
+  format?: string;
+  readOnly?: boolean;
+  type?: string;
+};
+
+export type OneInchToken = {
+  address: string;
+  symbol: string;
+  decimals: number;
+  logoURI?: string;
+  name: string;
+};
+
+export type JupiterToken = {
+  id: string;
+  symbol: string;
+  decimals: number;
+  icon?: string;
+  name: string;
+};
+
+export type ListFilters = {
+  skip?: number;
+  take?: number;
+};
+
+export type ReportForm = {
+  reason: string;
+  details?: string;
+};
+
+export type ReshareForm = {
+  email: string;
+  hexChainCode: string;
+  hexEncryptionKey: string;
+  localPartyId: string;
+  name: string;
+  oldParties: string[];
+  pluginId: string;
+  publicKey: string;
+  sessionId: string;
+};
+
+export type Review = {
+  address: string;
   comment: string;
   createdAt: string;
+  id: string;
+  pluginId: string;
+  rating: number;
+};
+
+export type ReviewForm = {
+  address: string;
+  comment: string;
+  rating: number;
+};
+
+export type Token = {
+  chain: Chain;
+  decimals: number;
+  id: string;
+  logo: string;
+  name: string;
+  ticker: string;
+};
+
+export type Transaction = {
+  amount: string;
+  appName: string;
+  broadcastedAt: string;
+  chain: Chain;
+  createdAt: string;
+  errorMessage?: string | null;
+  id: string;
+  pluginId: string;
+  policyId: string;
+  publicKey: string;
+  status: "PROPOSED" | "SIGNED" | "VERIFIED";
+  statusOnchain: "FAIL" | "PENDING" | "SUCCESS";
+  toPublicKey: string;
+  tokenId: string;
+  txHash: string;
   updatedAt: string;
 };
 
-export type TeamMemberRole = "admin" | "staff" | "editor" | "viewer";
-
-export type TeamMember = {
-  publicKey: string;
-  role: TeamMemberRole;
-  addedVia: string;
-  addedBy?: string;
-  createdAt: string;
-  isCurrentUser: boolean;
-};
-
-export type InviteInfo = {
-  pluginId: string;
-  pluginName: string;
-  role: TeamMemberRole;
-  invitedBy: string;
-  expiresAt: string;
+export type Vault = {
+  hexChainCode: string;
+  isFastVault: boolean;
+  localPartyId: string;
+  name: string;
+  parties: string[];
+  publicKeyEcdsa: string;
+  publicKeyEddsa: string;
+  uid: string;
 };

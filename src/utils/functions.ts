@@ -1,10 +1,13 @@
+import dayjs from "dayjs";
+
+import { Currency, currencySymbols } from "@/utils/currency";
 import { CSSProperties } from "@/utils/types";
 
-const isArray = (arr: unknown): arr is unknown[] => {
+const isArray = (arr: any): arr is any[] => {
   return Array.isArray(arr);
 };
 
-const isObject = (obj: unknown): obj is Record<string, unknown> => {
+const isObject = (obj: any): obj is Record<string, any> => {
   return obj === Object(obj) && !isArray(obj) && typeof obj !== "function";
 };
 
@@ -22,6 +25,14 @@ const toSnake = (value: string) => {
   return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 };
 
+export const camelCaseToTitle = (input: string) => {
+  if (!input) return input;
+
+  return input
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 export const cssPropertiesToString = (styles: CSSProperties) => {
   return Object.entries(styles)
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
@@ -31,10 +42,30 @@ export const cssPropertiesToString = (styles: CSSProperties) => {
 
 export const match = <T extends string | number | symbol, V>(
   value: T,
-  handlers: { [key in T]: () => V }
+  handlers: { [key in T]: () => V },
 ): V => {
   const handler = handlers[value];
+
   return handler();
+};
+
+export const scrollSelectDropdownToTop = (dropdownClassName: string) => {
+  requestAnimationFrame(() => {
+    const holder = document.querySelector(
+      `.${dropdownClassName} .rc-virtual-list-holder`,
+    ) as HTMLDivElement | null;
+
+    holder?.scrollTo({ top: 0 });
+  });
+};
+
+export const snakeCaseToTitle = (input: string) => {
+  if (!input) return input;
+
+  return input
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 export const toCamelCase = <T>(obj: T): T => {
@@ -54,6 +85,40 @@ export const toCamelCase = <T>(obj: T): T => {
   return obj;
 };
 
+// export const toKebabCase = <T>(obj: T): T => {
+//   if (isObject(obj)) {
+//     const result: Record<string, unknown> = {};
+
+//     Object.keys(obj).forEach((key) => {
+//       const kebabKey = toKebab(key);
+//       result[kebabKey] = toKebabCase((obj as Record<string, unknown>)[key]);
+//     });
+
+//     return result as T;
+//   } else if (isArray(obj)) {
+//     return obj.map((item) => toKebabCase(item)) as T;
+//   }
+
+//   return obj;
+// };
+
+export const toNumberFormat = (value: number | string, decimal = 20) => {
+  const str = String(value).trim();
+
+  // If not a valid number string, return as-is
+  if (!/^-?\d+(\.\d+)?$/.test(str)) return str;
+
+  const [intPartRaw, decPartRaw = ""] = str.split(".");
+
+  // Format integer part with commas
+  const intPart = intPartRaw.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  // Trim or pad decimals
+  const decPart = decPartRaw.slice(0, decimal);
+
+  return decPart.length > 0 ? `${intPart}.${decPart}` : intPart;
+};
+
 export const toSnakeCase = <T>(obj: T): T => {
   if (isObject(obj)) {
     const result: Record<string, unknown> = {};
@@ -71,25 +136,24 @@ export const toSnakeCase = <T>(obj: T): T => {
   return obj;
 };
 
-export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+export const toValueFormat = (
+  value: number | string,
+  currency: Currency,
+  decimal = 2,
+): string => {
+  return `${currencySymbols[currency]}${toNumberFormat(value, decimal)}`;
 };
 
-export const formatCurrency = (amount: string | number, decimals = 6): string => {
-  const parsed = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (isNaN(parsed)) {
-    return "$0.00";
-  }
-  const value = parsed / Math.pow(10, decimals);
-  return `$${value.toFixed(2)}`;
+export const tinyId = () => {
+  return Math.random().toString(36).slice(2, 8);
 };
 
-export const truncateAddress = (address: string, chars = 6): string => {
-  if (address.length <= chars * 2) return address;
-  return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+export const formatDateWithTimezone = (date: string | number) => {
+  const d = dayjs(date);
+
+  return {
+    date: d.format("YYYY-MM-DD"),
+    time: d.format("HH:mm"),
+    timezone: `UTC${d.format("Z")}`,
+  };
 };

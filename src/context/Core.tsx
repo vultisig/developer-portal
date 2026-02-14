@@ -1,25 +1,18 @@
 import { createContext } from "react";
 
+import { setCurrency } from "@/storage/currency";
 import { setTheme } from "@/storage/theme";
+import { Currency } from "@/utils/currency";
 import { Theme } from "@/utils/theme";
 
-export type VaultInfo = {
-  name: string;
-  publicKeyEcdsa: string;
-  publicKeyEddsa: string;
-  hexChainCode: string;
-  uid: string;
-};
-
 export type CoreContextProps = {
-  address?: string;
-  connect: () => void;
-  disconnect: () => void;
+  baseValue: number;
+  currency: Currency;
+  setCurrency: typeof setCurrency;
   setTheme: typeof setTheme;
   theme: Theme;
-  vault?: VaultInfo;
 };
 
 export const CoreContext = createContext<CoreContextProps | undefined>(
-  undefined
+  undefined,
 );
