@@ -156,7 +156,7 @@ export const themes: Record<Theme, DefaultTheme> = {
     bgError: new ColorToken(358, 83, 86), //hsla(358, 83%, 86%, 1)
     bgNeutral: new ColorToken(224, 69, 81), //hsla(224, 69%, 81%, 1)
     bgPrimary: new ColorToken(0, 0, 100), //hsla(0, 0%, 100%, 1)
-    bgSecondary: new ColorToken(0, 0, 100), //hsla(0, 0%, 100%, 1)
+    bgSecondary: new ColorToken(240, 20, 99), //hsla(240, 20%, 99%, 1)
     bgSuccess: new ColorToken(169, 81, 13), //hsla(169, 63%, 79%, 1)
     bgTertiary: new ColorToken(240, 20, 97), //hsla(240, 20%, 97%, 1)
     borderLight: new ColorToken(0, 0, 95), //hsla(0, 0%, 95%, 1)

@@ -3,8 +3,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthLayout } from "@/layouts/Auth";
 import { DefaultLayout } from "@/layouts/Default";
 import { ConnectPage } from "@/pages/Connect";
+import { DashboardPage } from "@/pages/Dashboard";
 import { InternalErrorPage } from "@/pages/InternalError";
-import { MainPage } from "@/pages/Main";
 import { NotFoundPage } from "@/pages/NotFound";
 import { ProjectCategoriesPage } from "@/pages/ProjectCategories";
 import { ProjectManagementPage } from "@/pages/ProjectManagement";
@@ -15,7 +15,7 @@ export const Routes = () => {
     {
       path: routeTree.root.path,
       element: <DefaultLayout />,
-      children: [{ index: true, element: <MainPage /> }],
+      children: [{ index: true, element: <DashboardPage /> }],
       errorElement: <InternalErrorPage />,
     },
     {

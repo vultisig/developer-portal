@@ -12,15 +12,19 @@ import { getTheme, setTheme as setThemeStorage } from "@/storage/theme";
 import { Currency } from "@/utils/currency";
 import { Theme } from "@/utils/theme";
 
-type StateProps = Pick<CoreContextProps, "baseValue" | "currency" | "theme">;
+type StateProps = Pick<
+  CoreContextProps,
+  "baseValue" | "currency" | "currentRoute" | "theme"
+>;
 
 export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<StateProps>({
     baseValue: 1,
     currency: getCurrency(),
+    currentRoute: "root",
     theme: getTheme(),
   });
-  const { baseValue, currency, theme } = state;
+  const { baseValue, currency, currentRoute, theme } = state;
 
   const setCurrency = (currency: Currency, fromStorage?: boolean) => {
     if (!fromStorage) setCurrencyStorage(currency);
@@ -53,6 +57,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
       value={{
         baseValue,
         currency,
+        currentRoute,
         setCurrency,
         setTheme,
         theme,

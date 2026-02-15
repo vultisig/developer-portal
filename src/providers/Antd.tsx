@@ -31,6 +31,7 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
         colorBgBase: colors.bgPrimary.toHex(),
         colorBgContainer: colors.bgPrimary.toHex(),
         colorBgElevated: colors.bgSecondary.toHex(),
+        colorBgSpotlight: colors.accentTwo.toHex(),
         colorBorder: colors.borderLight.toHex(),
         colorSplit: colors.borderNormal.toHex(),
         colorBorderSecondary: colors.borderNormal.toHex(),
@@ -39,6 +40,7 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
         colorLinkHover: colors.textPrimary.toHex(),
         colorLink: colors.textPrimary.toHex(),
         fontFamily: "inherit",
+        fontWeightStrong: 500,
       },
       components: {
         Form: {

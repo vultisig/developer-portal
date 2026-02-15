@@ -5,7 +5,7 @@ export const AnalyticsIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
     fill="none"
     height="1em"
     stroke="currentColor"
-    strokeLinecap="round"
+    strokeLinecap="square"
     strokeLinejoin="round"
     strokeWidth="1.5"
     viewBox="0 0 24 24"

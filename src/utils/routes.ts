@@ -1,4 +1,4 @@
-type RouteKey =
+export type RouteKey =
   | "account"
   | "notFound"
   | "projectCategories"

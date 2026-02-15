@@ -1,4 +1,6 @@
-import { Dropdown, MenuProps } from "antd";
+import { Dropdown, MenuProps, theme as antTheme,Tooltip } from "antd";
+import { useResponsive } from "antd-style";
+import { useMemo } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { createGlobalStyle, useTheme } from "styled-components";
 
@@ -10,6 +12,9 @@ import { ArrowBoxRightIcon } from "@/icons/ArrowBoxRightIcon";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { DotGridVerticalIcon } from "@/icons/DotGridVerticalIcon";
 import { MoonIcon } from "@/icons/MoonIcon";
+import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
+import { PuzzleIcon } from "@/icons/PuzzleIcon";
+import { SquareGridCircleIcon } from "@/icons/SquareGridCircleIcon";
 import { SunIcon } from "@/icons/SunIcon";
 import { VultisigLogoIcon } from "@/icons/VultisigLogoIcon";
 import { ZapIcon } from "@/icons/ZapIcon";
@@ -26,11 +31,43 @@ const GlobalStyle = createGlobalStyle`
 
 export const DefaultLayout = () => {
   const { connect, disconnect, vault } = useApp();
-  const { currency, setTheme, theme } = useCore();
+  const { currency, currentRoute, setTheme, theme } = useCore();
+  const { lg } = useResponsive();
+  const { token } = antTheme.useToken();
   const navigate = useNavigate();
   const colors = useTheme();
 
-  const dropdownMenu: MenuProps["items"] = [
+  const mainMenu = useMemo(
+    () => [
+      {
+        icon: SquareGridCircleIcon,
+        isActive: currentRoute === "root",
+        label: "Dashboard",
+        path: routeTree.root.path,
+      },
+      {
+        icon: PuzzleIcon,
+        isActive: currentRoute !== "root",
+        label: "Plugins",
+        path: routeTree.root.path,
+      },
+      {
+        icon: DollarIcon,
+        isActive: currentRoute !== "root",
+        label: "Revenue",
+        path: routeTree.root.path,
+      },
+      {
+        icon: PeopleCopyIcon,
+        isActive: currentRoute !== "root",
+        label: "Users",
+        path: routeTree.root.path,
+      },
+    ],
+    [currentRoute],
+  );
+
+  const sideMenu: MenuProps["items"] = [
     {
       icon: <DollarIcon />,
       key: "1",
@@ -102,7 +139,7 @@ export const DefaultLayout = () => {
             alignItems: "center",
             justifyContent: "space-between",
             height: "72px",
-            maxWidth: "1200px",
+            maxWidth: `${token.screenXL}px`,
             padding: "0 16px",
             width: "100%",
           }}
@@ -124,6 +161,7 @@ export const DefaultLayout = () => {
                 backgroundImage: `linear-gradient(to bottom, ${colors.accentFour.toHex()}, ${colors.accentOne.toHex()})`,
                 boxShadow: `0px 0.6px 0.6px 0px ${colors.neutral50.toRgba(0.35)} inset`,
                 borderRadius: "10px",
+                color: colors.neutral50.toHex(),
                 fontSize: "26px",
                 justifyContent: "center",
                 height: "40px",
@@ -136,8 +174,41 @@ export const DefaultLayout = () => {
               Developer Portal
             </Stack>
           </HStack>
+          {lg && (
+            <HStack $style={{ gap: "16px" }}>
+              {mainMenu.map((item, index) => (
+                <Tooltip key={index} placement="bottom" title={item.label}>
+                  <VStack
+                    as={Link}
+                    state={true}
+                    to={item.path}
+                    $style={{
+                      alignItems: "center",
+                      backgroundColor: item.isActive
+                        ? colors.accentTwo.toHex()
+                        : "transparent",
+                      borderRadius: "12px",
+                      color: item.isActive
+                        ? colors.neutral50.toHex()
+                        : colors.textPrimary.toHex(),
+                      fontSize: "20px",
+                      height: "40px",
+                      justifyContent: "center",
+                      width: "40px",
+                    }}
+                    $hover={{
+                      backgroundColor: colors.accentTwo.toHex(),
+                      color: colors.neutral50.toHex(),
+                    }}
+                  >
+                    <Stack as={item.icon} />
+                  </VStack>
+                </Tooltip>
+              ))}
+            </HStack>
+          )}
           <Dropdown
-            menu={{ items: dropdownMenu }}
+            menu={{ items: sideMenu }}
             placement="bottomRight"
             styles={{ root: { width: 302 } }}
           >
@@ -185,8 +256,47 @@ export const DefaultLayout = () => {
           </Dropdown>
         </HStack>
       </VStack>
-
       <Outlet />
+      {!lg && (
+        <HStack
+          $style={{
+            alignItems: "center",
+            backgroundColor: colors.bgPrimary.toHex(),
+            borderTopColor: colors.borderLight.toHex(),
+            borderTopStyle: "solid",
+            borderTopWidth: "1px",
+            bottom: "0",
+            justifyContent: "center",
+            position: "sticky",
+            zIndex: "2",
+          }}
+        >
+          {mainMenu.map((item, index) => (
+            <VStack
+              as={Link}
+              key={index}
+              state={true}
+              to={item.path}
+              $style={{
+                alignItems: "center",
+                backgroundColor: "transparent",
+                color: item.isActive
+                  ? colors.textPrimary.toHex()
+                  : colors.textTertiary.toHex(),
+                flexGrow: "1",
+                gap: "8px",
+                justifyContent: "center",
+                padding: "12px 0",
+              }}
+              $hover={{ backgroundColor: colors.bgTertiary.toHex() }}
+            >
+              <Stack as={item.icon} $style={{ fontSize: "20px" }} />
+              <Stack as="span">{item.label}</Stack>
+            </VStack>
+          ))}
+        </HStack>
+      )}
+
       <CurrencyModal />
     </>
   );

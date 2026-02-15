@@ -31,6 +31,7 @@ export const ProjectManagementPage = () => {
           backgroundImage: `linear-gradient(to bottom, ${colors.accentFour.toHex()}, ${colors.accentOne.toHex()})`,
           boxShadow: `0px 0.8px 0.8px 0px ${colors.neutral50.toRgba(0.35)} inset`,
           borderRadius: "12px",
+          color: colors.neutral50.toHex(),
           fontSize: "40px",
           justifyContent: "center",
           height: "60px",

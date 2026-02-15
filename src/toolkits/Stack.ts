@@ -70,7 +70,7 @@ export const VStack = styled.div<StackProps>`
     })}
 `;
 
-export type StackProps = DefaultProps & { $media?: { xl?: DefaultProps } };
+type StackProps = DefaultProps & { $media?: { xl?: DefaultProps } };
 
 type DefaultProps = {
   $after?: CSSProperties;
