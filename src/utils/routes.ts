@@ -1,13 +1,18 @@
 export type RouteKey =
   | "account"
+  | "earnings"
   | "notFound"
+  | "plugins"
   | "projectCategories"
   | "projectManagement"
-  | "root";
+  | "root"
+  | "users";
 
 export const routeTree = {
   account: { path: "/account" },
+  earnings: { path: "/earnings" },
   notFound: { path: "*" },
+  plugins: { path: "/plugins" },
   projectCategories: {
     path: "/account/projects/:projectId/categories",
     link: (projectId: string) => `/account/projects/${projectId}/categories`,
@@ -17,6 +22,7 @@ export const routeTree = {
     link: (projectId: string) => `/account/projects/${projectId}`,
   },
   root: { path: "/" },
+  users: { path: "/users" },
 } satisfies Record<
   RouteKey,
   { path: string; link?: (...args: string[]) => string }

@@ -1,4 +1,4 @@
-import { FC, ReactNode, useEffect, useState } from "react";
+import { FC, ReactNode, useCallback, useEffect, useState } from "react";
 
 import { getBaseValue } from "@/api/third-party/crypto";
 import { CoreContext, CoreContextProps } from "@/context/Core";
@@ -10,6 +10,7 @@ import {
 import { useLocalStorageWatcher } from "@/storage/hooks/useLocalStorageWatcher";
 import { getTheme, setTheme as setThemeStorage } from "@/storage/theme";
 import { Currency } from "@/utils/currency";
+import { RouteKey } from "@/utils/routes";
 import { Theme } from "@/utils/theme";
 
 type StateProps = Pick<
@@ -25,6 +26,10 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
     theme: getTheme(),
   });
   const { baseValue, currency, currentRoute, theme } = state;
+
+  const setCurrentRoute = useCallback((currentRoute: RouteKey) => {
+    setState((prev) => ({ ...prev, currentRoute }));
+  }, []);
 
   const setCurrency = (currency: Currency, fromStorage?: boolean) => {
     if (!fromStorage) setCurrencyStorage(currency);
@@ -59,6 +64,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
         currency,
         currentRoute,
         setCurrency,
+        setCurrentRoute,
         setTheme,
         theme,
       }}

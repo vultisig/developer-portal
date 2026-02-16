@@ -1,4 +1,4 @@
-import { Dropdown, MenuProps, theme as antTheme, Tooltip } from "antd";
+import { Dropdown, MenuProps, theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
 import { useMemo } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -40,21 +40,21 @@ export const DefaultLayout = () => {
       },
       {
         icon: PuzzleIcon,
-        isActive: currentRoute !== "root",
+        isActive: currentRoute === "plugins",
         label: "Plugins",
-        path: routeTree.root.path,
+        path: routeTree.plugins.path,
       },
       {
         icon: DollarIcon,
-        isActive: currentRoute !== "root",
-        label: "Revenue",
-        path: routeTree.root.path,
+        isActive: currentRoute === "earnings",
+        label: "Earnings",
+        path: routeTree.earnings.path,
       },
       {
         icon: PeopleCopyIcon,
-        isActive: currentRoute !== "root",
+        isActive: currentRoute === "users",
         label: "Users",
-        path: routeTree.root.path,
+        path: routeTree.users.path,
       },
     ],
     [currentRoute],
@@ -166,35 +166,27 @@ export const DefaultLayout = () => {
             </Stack>
           </HStack>
           {lg && (
-            <HStack $style={{ gap: "16px" }}>
+            <HStack $style={{ gap: "24px" }}>
               {mainMenu.map((item, index) => (
-                <Tooltip key={index} placement="bottom" title={item.label}>
-                  <VStack
-                    as={Link}
-                    state={true}
-                    to={item.path}
-                    $style={{
-                      alignItems: "center",
-                      backgroundColor: item.isActive
-                        ? colors.accentTwo.toHex()
-                        : "transparent",
-                      borderRadius: "12px",
-                      color: item.isActive
-                        ? colors.neutral50.toHex()
-                        : colors.textPrimary.toHex(),
-                      fontSize: "20px",
-                      height: "40px",
-                      justifyContent: "center",
-                      width: "40px",
-                    }}
-                    $hover={{
-                      backgroundColor: colors.accentTwo.toHex(),
-                      color: colors.neutral50.toHex(),
-                    }}
-                  >
-                    <Stack as={item.icon} />
-                  </VStack>
-                </Tooltip>
+                <HStack
+                  as={Link}
+                  key={index}
+                  state={true}
+                  to={item.path}
+                  $style={{
+                    gap: "4px",
+                    height: "20px",
+                    ...(item.isActive
+                      ? { color: colors.accentFour.toHex() }
+                      : {}),
+                  }}
+                  $hover={{ color: colors.accentFour.toHex() }}
+                >
+                  <Stack as={item.icon} $style={{ fontSize: "20px" }} />
+                  <Stack as="span" $style={{ lineHeight: "22px" }}>
+                    {item.label}
+                  </Stack>
+                </HStack>
               ))}
             </HStack>
           )}
@@ -247,7 +239,9 @@ export const DefaultLayout = () => {
           </Dropdown>
         </HStack>
       </VStack>
-      <Outlet />
+      <VStack $style={{ alignItems: "center", flexGrow: "1" }}>
+        <Outlet />
+      </VStack>
       {!lg && (
         <HStack
           $style={{
@@ -270,16 +264,13 @@ export const DefaultLayout = () => {
               to={item.path}
               $style={{
                 alignItems: "center",
-                backgroundColor: "transparent",
-                color: item.isActive
-                  ? colors.textPrimary.toHex()
-                  : colors.textTertiary.toHex(),
                 flexGrow: "1",
                 gap: "8px",
                 justifyContent: "center",
                 padding: "12px 0",
+                ...(item.isActive ? { color: colors.accentFour.toHex() } : {}),
               }}
-              $hover={{ backgroundColor: colors.bgTertiary.toHex() }}
+              $hover={{ color: colors.accentFour.toHex() }}
             >
               <Stack as={item.icon} $style={{ fontSize: "20px" }} />
               <Stack as="span">{item.label}</Stack>

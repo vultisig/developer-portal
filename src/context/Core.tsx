@@ -11,6 +11,7 @@ export type CoreContextProps = {
   currency: Currency;
   currentRoute: RouteKey;
   setCurrency: typeof setCurrency;
+  setCurrentRoute: (route: RouteKey) => void;
   setTheme: typeof setTheme;
   theme: Theme;
 };

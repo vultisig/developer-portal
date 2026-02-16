@@ -66,6 +66,10 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
           optionLineHeight: "28px",
           optionPadding: "4px 12px",
         },
+        Table: {
+          borderColor: colors.borderLight.toHex(),
+          headerBg: colors.bgTertiary.toHex(),
+        },
       },
     };
   }, [colors, theme]);

@@ -20,58 +20,15 @@ type StateProps = Pick<AppContextProps, "vault"> & {
   connectError?: string;
   connectStatus?: "connected" | "connecting" | "retrying" | "signing";
   disconnectStatus?: "confirm" | "pending" | "success";
-  isExtensionInstalled: boolean;
-  isValidActiveVault: boolean;
   loaded?: boolean;
-  signing?: boolean;
   vault?: Vault;
 };
 
 export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<StateProps>({
-    isExtensionInstalled: true,
-    isValidActiveVault: true,
-  });
-  const {
-    connectError,
-    connectStatus,
-    disconnectStatus,
-    loaded,
-    signing,
-    vault,
-  } = state;
+  const [state, setState] = useState<StateProps>({});
+  const { connectError, connectStatus, disconnectStatus, loaded, vault } =
+    state;
   const colors = useTheme();
-
-  const checkExtensionAvailability = async () => {
-    try {
-      await extensionAPI.isAvailable();
-    } catch (error) {
-      setState((prev) => ({ ...prev, isExtensionInstalled: false }));
-
-      throw error;
-    }
-  };
-
-  const checkActiveVaultValidity = async () => {
-    if (!vault) throw new Error("No vault connected");
-
-    try {
-      const { publicKeyEcdsa } = await extensionAPI.getVault();
-
-      if (publicKeyEcdsa !== vault.publicKeyEcdsa)
-        throw new Error("Active vault does not match connected vault");
-
-      setState((prev) => ({ ...prev, isValidActiveVault: true }));
-    } catch (error) {
-      setState((prev) => ({ ...prev, isValidActiveVault: false }));
-
-      await extensionAPI.disconnect();
-      await extensionAPI.connect();
-      await checkActiveVaultValidity();
-
-      throw error;
-    }
-  };
 
   const clear = () => {
     extensionAPI.disconnect().finally(() => {
@@ -81,8 +38,6 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const connect = async () => {
-    await checkExtensionAvailability();
-
     try {
       setState((prev) => ({
         ...prev,
@@ -178,33 +133,6 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
       <GlobalStyle />
 
       {loaded && children}
-
-      <Modal
-        centered={true}
-        closable={false}
-        footer="Confirming Transaction..."
-        styles={{
-          body: {
-            alignItems: "center",
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          },
-          container: { display: "flex", flexDirection: "column", gap: 12 },
-          footer: {
-            fontSize: 22,
-            lineHeight: "24px",
-            marginTop: 0,
-            textAlign: "center",
-          },
-        }}
-        title={false}
-        width={480}
-        open={signing}
-        zIndex={1002}
-      >
-        <Lottie animationData={splashScreen} />
-      </Modal>
 
       <Modal
         centered={true}

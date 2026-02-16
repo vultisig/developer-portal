@@ -31,11 +31,8 @@ const StyledButton = styled.div<{
   $kind: Kind;
 }>`
   align-items: center;
-  border-radius: 48px;
+  border-radius: 44px;
   border: none;
-  box-shadow:
-    0px 1px 1px 0px ${({ theme }) => theme.neutral50.toRgba(0.1)} inset,
-    0px -1px 0.5px 0px ${({ theme }) => theme.neutral900.toRgba(0.1)} inset;
   cursor: ${({ $disabled }) => ($disabled ? "default" : "pointer")};
   display: flex;
   font-size: 14px;
@@ -44,12 +41,13 @@ const StyledButton = styled.div<{
   gap: 8px;
   justify-content: center;
   transition: all 0.2s;
+  white-space: nowrap;
 
   ${({ $ghost }) => {
     return (
       !$ghost &&
       css`
-        height: 48px;
+        height: 44px;
         padding: 0 24px;
       `
     );
@@ -92,6 +90,11 @@ const StyledButton = styled.div<{
             }
           `
         : css`
+            box-shadow:
+              0px 1px 1px 0px ${({ theme }) => theme.neutral50.toRgba(0.1)}
+                inset,
+              0px -1px 0.5px 0px ${({ theme }) => theme.neutral900.toRgba(0.1)}
+                inset;
             ${match($kind, {
               danger: () => css`
                 background-color: ${theme.error.toHex()};
