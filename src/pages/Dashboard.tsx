@@ -260,7 +260,7 @@ export const DashboardPage = () => {
                       gap: "16px",
                       borderRadius: "16px",
                       overflow: "hidden",
-                      padding: "24px",
+                      padding: "20px",
                     }}
                   >
                     <HStack

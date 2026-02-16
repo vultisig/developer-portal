@@ -12,7 +12,6 @@ import { getVaults, setVaults } from "@/storage/vaults";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { Stack, VStack } from "@/toolkits/Stack";
-import { chains } from "@/utils/chain";
 import * as extensionAPI from "@/utils/extension";
 import { match } from "@/utils/functions";
 import { Vault } from "@/utils/types";
@@ -59,7 +58,7 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
     try {
       const { publicKeyEcdsa } = await extensionAPI.getVault();
 
-      if (publicKeyEcdsa !== vault.publicKeys.ecdsa)
+      if (publicKeyEcdsa !== vault.publicKeyEcdsa)
         throw new Error("Active vault does not match connected vault");
 
       setState((prev) => ({ ...prev, isValidActiveVault: true }));
@@ -158,32 +157,6 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }, 1000);
   };
 
-  const personalSign = async (message: string, appId?: string) => {
-    if (!vault) throw new Error("No vault connected");
-
-    await checkExtensionAvailability();
-    await checkActiveVaultValidity();
-
-    try {
-      setState((prev) => ({ ...prev, signing: true }));
-
-      const address = await vault.address(chains.Ethereum);
-      const signature = await extensionAPI.personalSign(
-        address,
-        message,
-        appId,
-      );
-
-      setState((prev) => ({ ...prev, signing: false }));
-
-      return signature;
-    } catch (error) {
-      setState((prev) => ({ ...prev, signing: false }));
-
-      throw error;
-    }
-  };
-
   useEffect(() => {
     const [vault] = getVaults();
 
@@ -198,13 +171,12 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
         connect,
         disconnect: () =>
           setState((prev) => ({ ...prev, disconnectStatus: "confirm" })),
-        personalSign,
         setVault: (vault) => setState((prev) => ({ ...prev, vault })),
         vault,
       }}
     >
       <GlobalStyle />
-      
+
       {loaded && children}
 
       <Modal
@@ -273,7 +245,7 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
             ),
           })
         }
-        maskClosable={false}
+        mask={{ closable: false }}
         onCancel={() =>
           setState((prev) => ({ ...prev, connectStatus: undefined }))
         }
@@ -359,7 +331,7 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
             ),
           })
         }
-        maskClosable={false}
+        mask={{ closable: false }}
         onCancel={() =>
           setState((prev) => ({ ...prev, disconnectStatus: undefined }))
         }

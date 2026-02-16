@@ -1,5 +1,4 @@
 import { List, Modal } from "antd";
-import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "styled-components";
 
@@ -10,7 +9,6 @@ import { modalHash } from "@/utils/constants";
 import { currencies, Currency, currencySymbols } from "@/utils/currency";
 
 export const CurrencyModal = () => {
-  const [visible, setVisible] = useState(false);
   const { currency, setCurrency } = useCore();
   const { hash } = useLocation();
   const goBack = useGoBack();
@@ -22,15 +20,13 @@ export const CurrencyModal = () => {
     goBack();
   };
 
-  useEffect(() => setVisible(hash === modalHash.currency), [hash]);
-
   return (
     <Modal
       centered={true}
       footer={false}
-      maskClosable={false}
+      mask={{ closable: false }}
       onCancel={() => goBack()}
-      open={visible}
+      open={hash === modalHash.currency}
       styles={{ footer: { display: "none" } }}
       title="Change Currency"
       width={360}

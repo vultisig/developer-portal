@@ -32,11 +32,6 @@ export type JupiterToken = {
   name: string;
 };
 
-export type ListFilters = {
-  skip?: number;
-  take?: number;
-};
-
 export type Token = {
   chain: Chain;
   decimals: number;

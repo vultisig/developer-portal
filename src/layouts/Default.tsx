@@ -1,8 +1,8 @@
-import { Dropdown, MenuProps, theme as antTheme,Tooltip } from "antd";
+import { Dropdown, MenuProps, theme as antTheme, Tooltip } from "antd";
 import { useResponsive } from "antd-style";
 import { useMemo } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { createGlobalStyle, useTheme } from "styled-components";
+import { useTheme } from "styled-components";
 
 import { CurrencyModal } from "@/components/CurrencyModal";
 import { useApp } from "@/hooks/useApp";
@@ -21,13 +21,6 @@ import { ZapIcon } from "@/icons/ZapIcon";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
 import { routeTree } from "@/utils/routes";
-
-const GlobalStyle = createGlobalStyle`
-  body {
-    background-color: ${({ theme }) => theme.bgPrimary.toHex()};
-    color: ${({ theme }) => theme.textPrimary.toHex()};
-  }
-`;
 
 export const DefaultLayout = () => {
   const { connect, disconnect, vault } = useApp();
@@ -119,8 +112,6 @@ export const DefaultLayout = () => {
 
   return (
     <>
-      <GlobalStyle />
-
       <VStack
         $style={{
           alignItems: "center",
