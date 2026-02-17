@@ -32,6 +32,19 @@ export type JupiterToken = {
   name: string;
 };
 
+export type Plugin = {
+  categoryId: string;
+  createdAt: string;
+  description: string;
+  id: string;
+  images: string[];
+  logoUrl: string;
+  price: string;
+  serverEndpoint: string;
+  status: "active" | "pending";
+  title: string;
+};
+
 export type Token = {
   chain: Chain;
   decimals: number;

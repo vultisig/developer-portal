@@ -1,11 +1,212 @@
-import { theme as antTheme } from "antd";
+import { Table, TableProps,theme as antTheme } from "antd";
+import { useResponsive } from "antd-style";
+import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { Stack, VStack } from "@/toolkits/Stack";
+import { PencilLineIcon } from "@/icons/PencilLineIcon";
+import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
+import { Button } from "@/toolkits/Button";
+import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { modalHash } from "@/utils/constants";
+import { match } from "@/utils/functions";
+import { Plugin } from "@/utils/types";
 
 export const PluginsPage = () => {
   const { token } = antTheme.useToken();
+  const { md } = useResponsive();
+  const navigate = useNavigate();
   const colors = useTheme();
+
+  const columns: TableProps<Plugin>["columns"] = [
+    {
+      dataIndex: "title",
+      key: "title",
+      title: "Title",
+      render: (_, { logoUrl, title }) => (
+        <HStack $style={{ alignItems: "center", gap: "12px" }}>
+          <Stack
+            as="img"
+            src={logoUrl}
+            $style={{ borderRadius: "12px", height: "40px", width: "40px" }}
+          />
+          <Stack as="span">{title}</Stack>
+        </HStack>
+      ),
+    },
+    {
+      align: "center",
+      dataIndex: "categoryId",
+      key: "categoryId",
+      title: "Category",
+      render: (_, { categoryId }) => (
+        <HStack $style={{ justifyContent: "center" }}>
+          <Stack
+            as="span"
+            $style={{
+              backgroundColor: colors.info.toRgba(0.1),
+              borderRadius: "4px",
+              color: colors.info.toHex(),
+              flex: "none",
+              fontSize: "12px",
+              lineHeight: "24px",
+              padding: "0 16px",
+            }}
+          >
+            {categoryId}
+          </Stack>
+        </HStack>
+      ),
+    },
+    {
+      align: "center",
+      dataIndex: "price",
+      key: "price",
+      title: "Price",
+    },
+    {
+      align: "center",
+      dataIndex: "serverEndpoint",
+      key: "serverEndpoint",
+      title: "Endpoint",
+    },
+    {
+      align: "center",
+      dataIndex: "status",
+      key: "status",
+      title: "Status",
+      render: (_, { status }) => {
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            {match(status, {
+              active: () => (
+                <HStack
+                  as="span"
+                  $style={{
+                    alignItems: "center",
+                    backgroundColor: colors.success.toRgba(0.05),
+                    borderRadius: "4px",
+                    gap: "4px",
+                    padding: "0 8px",
+                  }}
+                >
+                  <Stack
+                    as="span"
+                    $style={{
+                      backgroundColor: colors.success.toHex(),
+                      borderRadius: "50%",
+                      height: "6px",
+                      width: "6px",
+                    }}
+                  />
+                  <Stack
+                    as="span"
+                    $style={{
+                      color: colors.success.toHex(),
+                      fontSize: "12px",
+                      lineHeight: "24px",
+                    }}
+                  >
+                    Live
+                  </Stack>
+                </HStack>
+              ),
+              pending: () => (
+                <HStack
+                  as="span"
+                  $style={{
+                    alignItems: "center",
+                    backgroundColor: colors.warning.toRgba(0.05),
+                    borderRadius: "4px",
+                    color: colors.warning.toHex(),
+                    fontSize: "12px",
+                    gap: "4px",
+                    lineHeight: "24px",
+                    padding: "0 8px",
+                  }}
+                >
+                  In Review
+                </HStack>
+              ),
+            })}
+          </HStack>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      title: "Published",
+      render: (_, { createdAt }) => dayjs(createdAt).format("MMM D, YYYY"),
+    },
+    {
+      align: "center",
+      dataIndex: "id",
+      key: "id",
+      title: "Action",
+      width: 100,
+      render: () => (
+        <HStack $style={{ justifyContent: "center" }}>
+          <Stack
+            as={Button}
+            icon={<PencilLineIcon fontSize={16} />}
+            onClick={() => {}}
+            $style={{
+              backgroundColor: `${colors.bgTertiary.toHex()} !important`,
+              padding: "12px",
+            }}
+            ghost
+          />
+        </HStack>
+      ),
+    },
+  ];
+
+  const apps: Plugin[] = [
+    {
+      categoryId: "app",
+      createdAt: "2025-11-09T20:52:36.353238Z",
+      description:
+        "Automate your long-term investments with the Recurring Swaps app. Securely and automatically convert any Vultisig-supported asset into any other asset on a recurring schedule. Define the asset, amount, and time interval. Your vault executes the schedule without the need for third parties, contracts or bots.",
+      id: "vultisig-dca-0000",
+      images: [],
+      logoUrl:
+        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-dca-0000/logo/819c104d-1f89-4046-a239-d2d1181a52ae.jpg",
+      price: "$1.00 USDC / per-tx",
+      serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
+      status: "active",
+      title: "Recurring Swaps",
+    },
+    {
+      categoryId: "app",
+      createdAt: "2025-11-09T20:53:00.210327Z",
+      description:
+        "Fee collection and management system. Track, calculate, and distribute fees across different protocols and services.",
+      id: "vultisig-fees-feee",
+      images: [],
+      logoUrl:
+        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-fees-feee/logo/c7f19b93-8ac1-406d-97a9-48cf206c802d.jpg",
+      price: "Free",
+      serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
+      status: "active",
+      title: "Billing",
+    },
+    {
+      categoryId: "app",
+      createdAt: "2025-11-24T02:47:46.143176Z",
+      description:
+        "Automate your outgoing transfers with the Recurring Sends App. Securely schedule recurring payments to any address, for any asset supported in Vultisig. Set the destination, amount, and interval. Your devices approve the setup, and your vault handles the execution automatically.",
+      id: "vultisig-recurring-sends-0000",
+      images: [],
+      logoUrl:
+        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-recurring-sends-0000/logo/2b37fe78-58f9-46cd-937a-1818e8d770ca.jpg",
+      price: "$2.00 USDC / per-tx",
+      serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
+      status: "pending",
+      title: "Recurring Sends",
+    },
+  ];
 
   return (
     <VStack
@@ -16,21 +217,37 @@ export const PluginsPage = () => {
         width: "100%",
       }}
     >
-      <VStack $style={{ gap: "2px" }}>
-        <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
-          Your Plugins
-        </Stack>
-        <Stack
-          as="span"
-          $style={{
-            color: colors.textTertiary.toHex(),
-            fontSize: "13px",
-            lineHeight: "18px",
-          }}
+      <HStack $style={{ justifyContent: "space-between" }}>
+        <VStack $style={{ gap: "2px" }}>
+          <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
+            Your Plugins
+          </Stack>
+          <Stack
+            as="span"
+            $style={{
+              color: colors.textTertiary.toHex(),
+              fontSize: "13px",
+              lineHeight: "18px",
+            }}
+          >
+            Manage and configure your registered plugins
+          </Stack>
+        </VStack>
+        <Button
+          icon={<PlusLargeIcon fontSize={20} />}
+          onClick={() => navigate(modalHash.form, { state: true })}
         >
-          Manage and configure your registered plugins
-        </Stack>
-      </VStack>
+          {md && "New Plugin"}
+        </Button>
+      </HStack>
+      {/* <HStack
+        $style={{
+          backgroundColor: colors.bgTertiary.toHex(),
+          borderRadius: "20px",
+          padding: "20px",
+        }}
+      ></HStack> */}
+      <Table columns={columns} dataSource={apps} rowKey="id" />
     </VStack>
   );
 };
