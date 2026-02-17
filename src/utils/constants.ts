@@ -1,14 +1,9 @@
 export const defaultPageSize = 12;
 
 export const modalHash = {
-  automation: "#automation",
   currency: "#currency",
-  language: "#language",
-  payment: "#payment",
-  report: "#report",
-  requirements: "#requirements",
+  form: "#form",
   success: "#success",
-  review: "#review",
 } as const;
 
 export const portalApiUrl: string = import.meta.env.VITE_DEVELOPER_PORTAL_URL;

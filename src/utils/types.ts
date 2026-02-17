@@ -41,6 +41,14 @@ export type Token = {
   ticker: string;
 };
 
+export type User = {
+  email: string;
+  id: string;
+  name: string;
+  role: "owner" | "admin" | "developer";
+  status: "active" | "invited";
+};
+
 export type Vault = {
   hexChainCode: string;
   isFastVault: boolean;
