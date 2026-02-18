@@ -1,9 +1,12 @@
-import { Table, TableProps,theme as antTheme } from "antd";
+import { Table, TableProps, theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { ChartSixIcon } from "@/icons/ChartSixIcon";
+import { LiveFullIcon } from "@/icons/LiveFullIcon";
+import { LoaderIcon } from "@/icons/LoaderIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
 import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
 import { Button } from "@/toolkits/Button";
@@ -163,7 +166,7 @@ export const PluginsPage = () => {
     },
   ];
 
-  const apps: Plugin[] = [
+  const plugins: Plugin[] = [
     {
       categoryId: "app",
       createdAt: "2025-11-09T20:52:36.353238Z",
@@ -208,6 +211,27 @@ export const PluginsPage = () => {
     },
   ];
 
+  const stats = [
+    {
+      color: colors.info,
+      icon: ChartSixIcon,
+      label: "Total Plugins",
+      value: plugins.length,
+    },
+    {
+      color: colors.success,
+      icon: LiveFullIcon,
+      label: "Live Plugins",
+      value: plugins.filter((app) => app.status === "active").length,
+    },
+    {
+      color: colors.warning,
+      icon: LoaderIcon,
+      label: "In Review",
+      value: plugins.filter((app) => app.status === "pending").length,
+    },
+  ];
+
   return (
     <VStack
       $style={{
@@ -240,14 +264,45 @@ export const PluginsPage = () => {
           {md && "New Plugin"}
         </Button>
       </HStack>
-      {/* <HStack
+      <Stack
         $style={{
           backgroundColor: colors.bgTertiary.toHex(),
           borderRadius: "20px",
+          display: "grid",
+          gap: "16px",
+          gridTemplateColumns: md ? "repeat(3, 1fr)" : "repeat(1, 1fr)",
           padding: "20px",
         }}
-      ></HStack> */}
-      <Table columns={columns} dataSource={apps} rowKey="id" />
+      >
+        {stats.map(({ color, icon, label, value }, index) => (
+          <HStack
+            as="span"
+            key={index}
+            $style={{
+              alignItems: "center",
+              backgroundColor: color.toRgba(0.05),
+              borderColor: color.toRgba(0.2),
+              borderRadius: "12px",
+              borderStyle: "solid",
+              borderWidth: "1px",
+              gap: "20px",
+              padding: "18px 24px",
+            }}
+          >
+            <Stack
+              as={icon}
+              $style={{ color: color.toHex(), fontSize: "24px" }}
+            />
+            <Stack as="span" $style={{ flexGrow: 1, fontSize: "14px" }}>
+              {label}
+            </Stack>
+            <Stack as="span" $style={{ fontSize: "20px" }}>
+              {value}
+            </Stack>
+          </HStack>
+        ))}
+      </Stack>
+      <Table columns={columns} dataSource={plugins} rowKey="id" />
     </VStack>
   );
 };

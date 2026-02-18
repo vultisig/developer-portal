@@ -4,7 +4,7 @@ import styled, { useTheme } from "styled-components";
 
 import { BrainIcon } from "@/icons/BrainIcon";
 import { BuildingsIcon } from "@/icons/BuildingsIcon";
-import { ChartIcon } from "@/icons/ChartIcon";
+import { ChartFiveIcon } from "@/icons/ChartFiveIcon";
 import { CuteRobotIcon } from "@/icons/CuteRobotIcon";
 import { FortuneTellerBallIcon } from "@/icons/FortuneTellerBallIcon";
 import { ToolboxIcon } from "@/icons/ToolboxIcon";
@@ -26,7 +26,7 @@ export const ProjectCategoriesPage = () => {
     { icon: BrainIcon, color: colors.accentFour, text: "Automation apps" },
     { icon: CuteRobotIcon, color: colors.accentFour, text: "AI agents" },
     { icon: ToolboxIcon, color: colors.warning, text: "Portfolio tools" },
-    { icon: ChartIcon, color: colors.success, text: "Trading / execution" },
+    { icon: ChartFiveIcon, color: colors.success, text: "Trading / execution" },
     {
       icon: BuildingsIcon,
       color: colors.info,

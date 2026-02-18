@@ -1,6 +1,6 @@
 import { FC, SVGProps } from "react";
 
-export const ChartIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
+export const ChartFiveIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
   <svg
     fill="none"
     height="1em"
