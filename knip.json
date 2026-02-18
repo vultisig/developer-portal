@@ -1,5 +1,5 @@
 {
   "entry": ["src/styled.d.ts"],
-  "ignore": ["src/proto/*"],
+  "ignore": [],
   "ignoreDependencies": []
 }
