@@ -26,11 +26,22 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+type UnauthorizedHandler = () => void;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export const setUnauthorizedHandler = (handler: UnauthorizedHandler) => {
+  unauthorizedHandler = handler;
+};
+
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
+      if (error.response.status === 401) {
+        unauthorizedHandler?.();
+      }
       // Server responded with error status
       const message = error.response.data?.error || "An error occurred";
       return Promise.reject(new Error(message));

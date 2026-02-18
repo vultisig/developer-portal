@@ -1,8 +1,8 @@
 import { message as Message, Modal } from "antd";
 import { hexlify, randomBytes } from "ethers";
-import { FC, ReactNode, useCallback, useState } from "react";
+import { FC, ReactNode, useCallback, useEffect, useState } from "react";
 
-import { authenticate } from "@/api/client";
+import { authenticate, setUnauthorizedHandler } from "@/api/client";
 import { CoreContext, CoreContextProps, VaultInfo } from "@/context/Core";
 import { storageKeys } from "@/storage/constants";
 import { useLocalStorageWatcher } from "@/storage/hooks/useLocalStorageWatcher";
@@ -38,6 +38,13 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }));
     });
   }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      messageAPI.warning("Your session has expired. Please reconnect your wallet.");
+      clear();
+    });
+  }, [clear, messageAPI]);
 
   const connect = useCallback(() => {
     connectToExtension()
