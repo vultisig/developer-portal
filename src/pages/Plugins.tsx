@@ -293,10 +293,13 @@ export const PluginsPage = () => {
               as={icon}
               $style={{ color: color.toHex(), fontSize: "24px" }}
             />
-            <Stack as="span" $style={{ flexGrow: 1, fontSize: "14px" }}>
+            <Stack
+              as="span"
+              $style={{ flexGrow: 1, fontSize: "14px", lineHeight: "18px" }}
+            >
               {label}
             </Stack>
-            <Stack as="span" $style={{ fontSize: "20px" }}>
+            <Stack as="span" $style={{ fontSize: "20px", lineHeight: "24px" }}>
               {value}
             </Stack>
           </HStack>
