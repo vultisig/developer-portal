@@ -26,9 +26,14 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-type UnauthorizedHandler = () => void;
+type UnauthorizedHandler = () => Promise<string>;
 
 let unauthorizedHandler: UnauthorizedHandler | null = null;
+let isRefreshing = false;
+let failedRequestsQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+}> = [];
 
 export const setUnauthorizedHandler = (handler: UnauthorizedHandler) => {
   unauthorizedHandler = handler;
@@ -38,10 +43,31 @@ export const setUnauthorizedHandler = (handler: UnauthorizedHandler) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
-      if (error.response.status === 401) {
-        unauthorizedHandler?.();
+    if (error.response?.status === 401 && unauthorizedHandler) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        unauthorizedHandler()
+          .then((newToken) => {
+            failedRequestsQueue.forEach(({ resolve }) => resolve(newToken));
+            failedRequestsQueue = [];
+            isRefreshing = false;
+          })
+          .catch((err) => {
+            failedRequestsQueue.forEach(({ reject }) => reject(err));
+            failedRequestsQueue = [];
+            isRefreshing = false;
+          });
       }
+
+      return new Promise<string>((resolve, reject) => {
+        failedRequestsQueue.push({ resolve, reject });
+      }).then((token) => {
+        error.config.headers["Authorization"] = `Bearer ${token}`;
+        return apiClient(error.config);
+      });
+    }
+
+    if (error.response) {
       // Server responded with error status
       const message = error.response.data?.error || "An error occurred";
       return Promise.reject(new Error(message));
