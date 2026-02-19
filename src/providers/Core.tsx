@@ -1,8 +1,8 @@
 import { message as Message, Modal } from "antd";
 import { hexlify, randomBytes } from "ethers";
-import { FC, ReactNode, useCallback, useState } from "react";
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
-import { authenticate } from "@/api/client";
+import { authenticate, setUnauthorizedHandler } from "@/api/client";
 import { CoreContext, CoreContextProps, VaultInfo } from "@/context/Core";
 import { storageKeys } from "@/storage/constants";
 import { useLocalStorageWatcher } from "@/storage/hooks/useLocalStorageWatcher";
@@ -27,6 +27,13 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [messageAPI, messageHolder] = Message.useMessage();
   const [modalAPI, modalHolder] = Modal.useModal();
 
+  // Stable ref so the unauthorized handler always sees the latest address/vault
+  // without needing to re-register on every state change.
+  const sessionRef = useRef<{ address?: string; vault?: VaultInfo }>({});
+  useEffect(() => {
+    sessionRef.current = { address, vault };
+  }, [address, vault]);
+
   const clear = useCallback(() => {
     disconnectFromExtension().finally(() => {
       delToken(getVaultId());
@@ -38,6 +45,44 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }));
     });
   }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(async () => {
+      const { address, vault } = sessionRef.current;
+
+      if (!address || !vault) {
+        clear();
+        throw new Error("Not connected");
+      }
+
+      messageAPI.warning("Your session has expired. Please sign again to continue.");
+      delToken(vault.publicKeyEcdsa);
+
+      const nonce = hexlify(randomBytes(16));
+      const expiryTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const message = JSON.stringify({
+        message: "Sign into Vultisig Developer Portal",
+        nonce,
+        expiresAt: expiryTime,
+        address,
+      });
+
+      try {
+        const signature = await personalSign(address, message, "connect");
+        const response = await authenticate({
+          chain_code_hex: vault.hexChainCode,
+          public_key: vault.publicKeyEcdsa,
+          signature,
+          message,
+        });
+        setToken(vault.publicKeyEcdsa, response.token);
+        return response.token;
+      } catch (err) {
+        clear();
+        throw err;
+      }
+    });
+  }, [clear, messageAPI]);
 
   const connect = useCallback(() => {
     connectToExtension()
