@@ -1,7 +1,10 @@
+import { theme } from "antd";
 import styled, { css } from "styled-components";
 
 import { cssPropertiesToString } from "@/utils/functions";
 import { CSSProperties } from "@/utils/types";
+
+export const { screenLG, screenMD, screenXL } = theme.getDesignToken();
 
 const defaultPropertiesToString = (props: DefaultProps) => {
   const { $after, $before, $hover, $style } = props;
@@ -41,9 +44,21 @@ const stackPropertiesToString = (props: StackProps) => {
 
   return css`
     ${defaultPropertiesToString(props)}
+    ${$media?.lg &&
+    css`
+      @media (min-width: ${screenLG}px) {
+        ${defaultPropertiesToString($media.lg)}
+      }
+    `}
+    ${$media?.md &&
+    css`
+      @media (min-width: ${screenMD}px) {
+        ${defaultPropertiesToString($media.md)}
+      }
+    `}
     ${$media?.xl &&
     css`
-      @media (min-width: 1200px) {
+      @media (min-width: ${screenXL}px) {
         ${defaultPropertiesToString($media.xl)}
       }
     `}
@@ -70,7 +85,9 @@ export const VStack = styled.div<StackProps>`
     })}
 `;
 
-type StackProps = DefaultProps & { $media?: { xl?: DefaultProps } };
+type StackProps = DefaultProps & {
+  $media?: { lg?: DefaultProps; md?: DefaultProps; xl?: DefaultProps };
+};
 
 type DefaultProps = {
   $after?: CSSProperties;

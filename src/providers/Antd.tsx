@@ -37,12 +37,13 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
         colorBgElevated: colors.bgSecondary.toHex(),
         colorBgSpotlight: colors.accentTwo.toHex(),
         colorBorder: colors.borderLight.toHex(),
-        colorSplit: colors.borderNormal.toHex(),
         colorBorderSecondary: colors.borderNormal.toHex(),
-        colorPrimary: colors.buttonPrimary.toHex(),
-        colorWarning: colors.warning.toHex(),
-        colorLinkHover: colors.textPrimary.toHex(),
         colorLink: colors.textPrimary.toHex(),
+        colorLinkHover: colors.textPrimary.toHex(),
+        colorPrimary: colors.buttonPrimary.toHex(),
+        colorSplit: colors.borderNormal.toHex(),
+        colorTextDescription: colors.textPrimary.toHex(),
+        colorWarning: colors.warning.toHex(),
         fontFamily: "inherit",
         fontWeightStrong: 500,
       },
@@ -83,6 +84,12 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
           borderColor: colors.borderLight.toHex(),
           headerBg: colors.bgTertiary.toHex(),
         },
+        Upload: {
+          colorBorder: colors.borderLight.toHex(),
+          colorPrimary: colors.borderNormal.toHex(),
+          colorPrimaryHover: colors.borderNormal.toHex(),
+          colorFillAlter: colors.bgSecondary.toHex(),
+        },
       },
     };
   }, [colors, theme]);
@@ -92,6 +99,7 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
       theme={themeConfig}
       modal={{ className: styles.modal, closeIcon: <CrossLargeIcon /> }}
       table={{ className: styles.table }}
+      upload={{ className: styles.upload }}
     >
       <AntdContext.Provider value={{ messageAPI, modalAPI }}>
         {children}
@@ -168,6 +176,20 @@ const useStyles = createStyles(({ css, cssVar, prefixCls }) => ({
 
       &:last-child {
         border-end-end-radius: ${cssVar.borderRadius};
+      }
+    }
+  `,
+  upload: css`
+    .${prefixCls}-upload-drag {
+      .${prefixCls}-upload-btn {
+        .${prefixCls}-upload-drag-container {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          justify-content: center;
+          padding: 40px;
+        }
       }
     }
   `,

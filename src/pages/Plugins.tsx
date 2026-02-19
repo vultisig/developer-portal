@@ -1,7 +1,7 @@
 import { Table, TableProps, theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
@@ -11,8 +11,8 @@ import { PencilLineIcon } from "@/icons/PencilLineIcon";
 import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { modalHash } from "@/utils/constants";
 import { match } from "@/utils/functions";
+import { routeTree } from "@/utils/routes";
 import { Plugin } from "@/utils/types";
 
 export const PluginsPage = () => {
@@ -149,18 +149,22 @@ export const PluginsPage = () => {
       key: "id",
       title: "Action",
       width: 100,
-      render: () => (
+      render: (_, { id }) => (
         <HStack $style={{ justifyContent: "center" }}>
-          <Stack
-            as={Button}
-            icon={<PencilLineIcon fontSize={16} />}
+          <HStack
+            as={Link}
+            to={routeTree.pluginUpdate.link(id)}
             onClick={() => {}}
+            state={true}
             $style={{
-              backgroundColor: `${colors.bgTertiary.toHex()} !important`,
+              backgroundColor: `${colors.bgTertiary.toHex()}`,
+              borderRadius: "50%",
               padding: "12px",
             }}
-            ghost
-          />
+            $hover={{ color: colors.info.toHex() }}
+          >
+            <PencilLineIcon fontSize={16} />
+          </HStack>
         </HStack>
       ),
     },
@@ -168,10 +172,12 @@ export const PluginsPage = () => {
 
   const plugins: Plugin[] = [
     {
+      bannerUrl: "",
       categoryId: "app",
       createdAt: "2025-11-09T20:52:36.353238Z",
       description:
         "Automate your long-term investments with the Recurring Swaps app. Securely and automatically convert any Vultisig-supported asset into any other asset on a recurring schedule. Define the asset, amount, and time interval. Your vault executes the schedule without the need for third parties, contracts or bots.",
+      email: "",
       id: "vultisig-dca-0000",
       images: [],
       logoUrl:
@@ -179,13 +185,16 @@ export const PluginsPage = () => {
       price: "$1.00 USDC / per-tx",
       serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
       status: "active",
+      supportedChains: [],
       title: "Recurring Swaps",
     },
     {
+      bannerUrl: "",
       categoryId: "app",
       createdAt: "2025-11-09T20:53:00.210327Z",
       description:
         "Fee collection and management system. Track, calculate, and distribute fees across different protocols and services.",
+      email: "",
       id: "vultisig-fees-feee",
       images: [],
       logoUrl:
@@ -193,13 +202,16 @@ export const PluginsPage = () => {
       price: "Free",
       serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
       status: "active",
+      supportedChains: [],
       title: "Billing",
     },
     {
+      bannerUrl: "",
       categoryId: "app",
       createdAt: "2025-11-24T02:47:46.143176Z",
       description:
         "Automate your outgoing transfers with the Recurring Sends App. Securely schedule recurring payments to any address, for any asset supported in Vultisig. Set the destination, amount, and interval. Your devices approve the setup, and your vault handles the execution automatically.",
+      email: "",
       id: "vultisig-recurring-sends-0000",
       images: [],
       logoUrl:
@@ -207,6 +219,7 @@ export const PluginsPage = () => {
       price: "$2.00 USDC / per-tx",
       serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
       status: "pending",
+      supportedChains: [],
       title: "Recurring Sends",
     },
   ];
@@ -259,7 +272,7 @@ export const PluginsPage = () => {
         </VStack>
         <Button
           icon={<PlusLargeIcon fontSize={20} />}
-          onClick={() => navigate(modalHash.form, { state: true })}
+          onClick={() => navigate(routeTree.pluginCreate.path, { state: true })}
         >
           {md && "New Plugin"}
         </Button>

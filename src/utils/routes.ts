@@ -3,6 +3,9 @@ export type RouteKey =
   | "earnings"
   | "notFound"
   | "plugins"
+  | "pluginCreate"
+  | "pluginUpdate"
+  | "pluginTransactions"
   | "projectCategories"
   | "projectManagement"
   | "root"
@@ -13,6 +16,15 @@ export const routeTree = {
   earnings: { path: "/earnings" },
   notFound: { path: "*" },
   plugins: { path: "/plugins" },
+  pluginCreate: { path: "/plugins/create" },
+  pluginUpdate: {
+    path: "/plugins/:pluginId",
+    link: (pluginId: string) => `/plugins/${pluginId}`,
+  },
+  pluginTransactions: {
+    path: "/plugins/:pluginId/transactions",
+    link: (pluginId: string) => `/plugins/${pluginId}/transactions`,
+  },
   projectCategories: {
     path: "/account/projects/:projectId/categories",
     link: (projectId: string) => `/account/projects/${projectId}/categories`,

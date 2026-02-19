@@ -9,6 +9,7 @@ import { DashboardPage } from "@/pages/Dashboard";
 import { EarningsPage } from "@/pages/Earnings";
 import { InternalErrorPage } from "@/pages/InternalError";
 import { NotFoundPage } from "@/pages/NotFound";
+import { PluginManagement } from "@/pages/PluginManagement";
 import { PluginsPage } from "@/pages/Plugins";
 import { ProjectCategoriesPage } from "@/pages/ProjectCategories";
 import { ProjectManagementPage } from "@/pages/ProjectManagement";
@@ -46,6 +47,14 @@ export const Routes = () => {
         {
           path: routeTree.plugins.path,
           element: setCurrentRoute("plugins", <PluginsPage />),
+        },
+        {
+          path: routeTree.pluginCreate.path,
+          element: setCurrentRoute("pluginCreate", <PluginManagement />),
+        },
+        {
+          path: routeTree.pluginUpdate.path,
+          element: setCurrentRoute("pluginUpdate", <PluginManagement />),
         },
         {
           path: routeTree.users.path,

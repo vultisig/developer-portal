@@ -144,6 +144,9 @@ export const DashboardPage = () => {
           </VStack>
         ))}
         <VStack
+          as={Link}
+          to={routeTree.pluginCreate.path}
+          state={true}
           $style={{
             alignItems: "center",
             backgroundImage: `linear-gradient(310deg, ${colors.accentFour.toHex()} 18%, ${colors.accentTwo.toHex()} 82%)`,
