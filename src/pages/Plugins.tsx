@@ -1,12 +1,14 @@
-import { Table, TableProps, theme as antTheme } from "antd";
+import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
 import { useResponsive } from "antd-style";
-import dayjs from "dayjs";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { DateView } from "@/components/DateView";
+import { plugins } from "@/data/mock";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { LiveFullIcon } from "@/icons/LiveFullIcon";
 import { LoaderIcon } from "@/icons/LoaderIcon";
+import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
 import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
 import { Button } from "@/toolkits/Button";
@@ -18,7 +20,6 @@ import { Plugin } from "@/utils/types";
 export const PluginsPage = () => {
   const { token } = antTheme.useToken();
   const { md } = useResponsive();
-  const navigate = useNavigate();
   const colors = useTheme();
 
   const columns: TableProps<Plugin>["columns"] = [
@@ -75,152 +76,115 @@ export const PluginsPage = () => {
     },
     {
       align: "center",
-      dataIndex: "status",
-      key: "status",
-      title: "Status",
-      render: (_, { status }) => {
-        return (
-          <HStack $style={{ justifyContent: "center" }}>
-            {match(status, {
-              active: () => (
-                <HStack
-                  as="span"
-                  $style={{
-                    alignItems: "center",
-                    backgroundColor: colors.success.toRgba(0.05),
-                    borderRadius: "4px",
-                    gap: "4px",
-                    padding: "0 8px",
-                  }}
-                >
-                  <Stack
-                    as="span"
-                    $style={{
-                      backgroundColor: colors.success.toHex(),
-                      borderRadius: "50%",
-                      height: "6px",
-                      width: "6px",
-                    }}
-                  />
-                  <Stack
-                    as="span"
-                    $style={{
-                      color: colors.success.toHex(),
-                      fontSize: "12px",
-                      lineHeight: "24px",
-                    }}
-                  >
-                    Live
-                  </Stack>
-                </HStack>
-              ),
-              pending: () => (
-                <HStack
-                  as="span"
-                  $style={{
-                    alignItems: "center",
-                    backgroundColor: colors.warning.toRgba(0.05),
-                    borderRadius: "4px",
-                    color: colors.warning.toHex(),
-                    fontSize: "12px",
-                    gap: "4px",
-                    lineHeight: "24px",
-                    padding: "0 8px",
-                  }}
-                >
-                  In Review
-                </HStack>
-              ),
-            })}
-          </HStack>
-        );
+      dataIndex: "createdAt",
+      key: "createdAt",
+      title: "Created At",
+      render: (_, { createdAt }) => {
+        return <DateView date={createdAt} />;
       },
     },
     {
       align: "center",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      title: "Published",
-      render: (_, { createdAt }) => dayjs(createdAt).format("MMM D, YYYY"),
+      dataIndex: "status",
+      key: "status",
+      title: "Status",
+      render: (_, { status }) => (
+        <HStack $style={{ justifyContent: "center" }}>
+          {match(status, {
+            active: () => (
+              <HStack
+                as="span"
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.success.toRgba(0.05),
+                  borderRadius: "4px",
+                  gap: "4px",
+                  padding: "0 8px",
+                }}
+              >
+                <Stack
+                  as="span"
+                  $style={{
+                    backgroundColor: colors.success.toHex(),
+                    borderRadius: "50%",
+                    height: "6px",
+                    width: "6px",
+                  }}
+                />
+                <Stack
+                  as="span"
+                  $style={{
+                    color: colors.success.toHex(),
+                    fontSize: "12px",
+                    lineHeight: "24px",
+                  }}
+                >
+                  Live
+                </Stack>
+              </HStack>
+            ),
+            pending: () => (
+              <HStack
+                as="span"
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.warning.toRgba(0.05),
+                  borderRadius: "4px",
+                  color: colors.warning.toHex(),
+                  fontSize: "12px",
+                  gap: "4px",
+                  lineHeight: "24px",
+                  padding: "0 8px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                In Review
+              </HStack>
+            ),
+          })}
+        </HStack>
+      ),
     },
     {
       align: "center",
       dataIndex: "id",
       key: "id",
       title: "Action",
-      width: 100,
+      width: 124,
       render: (_, { id }) => (
-        <HStack $style={{ justifyContent: "center" }}>
-          <HStack
-            as={Link}
-            to={routeTree.pluginUpdate.link(id)}
-            onClick={() => {}}
-            state={true}
-            $style={{
-              backgroundColor: `${colors.bgTertiary.toHex()}`,
-              borderRadius: "50%",
-              padding: "12px",
-            }}
-            $hover={{ color: colors.info.toHex() }}
-          >
-            <PencilLineIcon fontSize={16} />
-          </HStack>
+        <HStack $style={{ gap: "8px", justifyContent: "center" }}>
+          <Tooltip title="Update">
+            <HStack
+              as={Link}
+              to={routeTree.pluginUpdate.link(id)}
+              state={true}
+              $style={{
+                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                borderRadius: "50%",
+                padding: "12px",
+              }}
+              $hover={{ color: colors.info.toHex() }}
+            >
+              <PencilLineIcon fontSize={16} />
+            </HStack>
+          </Tooltip>
+          <Tooltip title="Transactions">
+            <HStack
+              as={Link}
+              to={routeTree.pluginTransactions.link(id)}
+              state={true}
+              $style={{
+                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                borderRadius: "50%",
+                padding: "12px",
+              }}
+              $hover={{ color: colors.info.toHex() }}
+            >
+              <NewspaperIcon fontSize={16} />
+            </HStack>
+          </Tooltip>
         </HStack>
       ),
-    },
-  ];
-
-  const plugins: Plugin[] = [
-    {
-      bannerUrl: "",
-      categoryId: "app",
-      createdAt: "2025-11-09T20:52:36.353238Z",
-      description:
-        "Automate your long-term investments with the Recurring Swaps app. Securely and automatically convert any Vultisig-supported asset into any other asset on a recurring schedule. Define the asset, amount, and time interval. Your vault executes the schedule without the need for third parties, contracts or bots.",
-      email: "",
-      id: "vultisig-dca-0000",
-      images: [],
-      logoUrl:
-        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-dca-0000/logo/819c104d-1f89-4046-a239-d2d1181a52ae.jpg",
-      price: "$1.00 USDC / per-tx",
-      serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
-      status: "active",
-      supportedChains: [],
-      title: "Recurring Swaps",
-    },
-    {
-      bannerUrl: "",
-      categoryId: "app",
-      createdAt: "2025-11-09T20:53:00.210327Z",
-      description:
-        "Fee collection and management system. Track, calculate, and distribute fees across different protocols and services.",
-      email: "",
-      id: "vultisig-fees-feee",
-      images: [],
-      logoUrl:
-        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-fees-feee/logo/c7f19b93-8ac1-406d-97a9-48cf206c802d.jpg",
-      price: "Free",
-      serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
-      status: "active",
-      supportedChains: [],
-      title: "Billing",
-    },
-    {
-      bannerUrl: "",
-      categoryId: "app",
-      createdAt: "2025-11-24T02:47:46.143176Z",
-      description:
-        "Automate your outgoing transfers with the Recurring Sends App. Securely schedule recurring payments to any address, for any asset supported in Vultisig. Set the destination, amount, and interval. Your devices approve the setup, and your vault handles the execution automatically.",
-      email: "",
-      id: "vultisig-recurring-sends-0000",
-      images: [],
-      logoUrl:
-        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-recurring-sends-0000/logo/2b37fe78-58f9-46cd-937a-1818e8d770ca.jpg",
-      price: "$2.00 USDC / per-tx",
-      serverEndpoint: "https://plugin-dca-swap.prod.plugins.vultisig.com",
-      status: "pending",
-      supportedChains: [],
-      title: "Recurring Sends",
     },
   ];
 
@@ -271,8 +235,9 @@ export const PluginsPage = () => {
           </Stack>
         </VStack>
         <Button
-          icon={<PlusLargeIcon fontSize={20} />}
-          onClick={() => navigate(routeTree.pluginCreate.path, { state: true })}
+          href={routeTree.pluginCreate.path}
+          icon={<PlusLargeIcon fontSize={16} />}
+          state={true}
         >
           {md && "New Plugin"}
         </Button>
@@ -318,7 +283,7 @@ export const PluginsPage = () => {
           </HStack>
         ))}
       </Stack>
-      <Table columns={columns} dataSource={plugins} rowKey="id" />
+      <Table<Plugin> columns={columns} dataSource={plugins} rowKey="id" />
     </VStack>
   );
 };

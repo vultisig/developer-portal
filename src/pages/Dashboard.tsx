@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { plugins } from "@/data/mock";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { InboxEmptyIcon } from "@/icons/InboxEmptyIcon";
 import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
@@ -16,42 +17,6 @@ export const DashboardPage = () => {
   const { token } = antTheme.useToken();
   const { md, xl } = useResponsive();
   const colors = useTheme();
-
-  const apps = [
-    {
-      categoryId: "app",
-      createdAt: "2025-11-09T20:52:36.353238Z",
-      description:
-        "Automate your long-term investments with the Recurring Swaps app. Securely and automatically convert any Vultisig-supported asset into any other asset on a recurring schedule. Define the asset, amount, and time interval. Your vault executes the schedule without the need for third parties, contracts or bots.",
-      id: "vultisig-dca-0000",
-      logoUrl:
-        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-dca-0000/logo/819c104d-1f89-4046-a239-d2d1181a52ae.jpg",
-      price: "$1.00 USDC / per-tx",
-      title: "Recurring Swaps",
-    },
-    {
-      categoryId: "app",
-      createdAt: "2025-11-09T20:53:00.210327Z",
-      description:
-        "Fee collection and management system. Track, calculate, and distribute fees across different protocols and services.",
-      id: "vultisig-fees-feee",
-      logoUrl:
-        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-fees-feee/logo/c7f19b93-8ac1-406d-97a9-48cf206c802d.jpg",
-      price: "Free",
-      title: "Billing",
-    },
-    {
-      categoryId: "app",
-      createdAt: "2025-11-24T02:47:46.143176Z",
-      description:
-        "Automate your outgoing transfers with the Recurring Sends App. Securely schedule recurring payments to any address, for any asset supported in Vultisig. Set the destination, amount, and interval. Your devices approve the setup, and your vault handles the execution automatically.",
-      id: "vultisig-recurring-sends-0000",
-      logoUrl:
-        "https://app-store-vs-prod.sgp1.cdn.digitaloceanspaces.com/plugins/vultisig-recurring-sends-0000/logo/2b37fe78-58f9-46cd-937a-1818e8d770ca.jpg",
-      price: "$2.00 USDC / per-tx",
-      title: "Recurring Sends",
-    },
-  ];
 
   const items = [
     { icon: <DollarIcon />, title: "Total Revenue", value: "$2.3k" },
@@ -236,7 +201,7 @@ export const DashboardPage = () => {
             </Stack>
           </HStack>
           <VStack $style={{ gap: "12px" }}>
-            {apps.map(
+            {plugins.map(
               ({
                 categoryId,
                 createdAt,

@@ -57,6 +57,25 @@ export type Token = {
   ticker: string;
 };
 
+export type Transaction = {
+  amount?: string;
+  appName: string;
+  broadcastedAt: string;
+  chain: Chain;
+  createdAt: string;
+  errorMessage?: string;
+  id: string;
+  pluginId: string;
+  policyId: string;
+  publicKey: string;
+  status: "PROPOSED" | "SIGNED" | "VERIFIED";
+  statusOnchain: "FAIL" | "PENDING" | "SUCCESS";
+  toPublicKey: string;
+  tokenId: string;
+  txHash: string;
+  updatedAt: string;
+};
+
 export type User = {
   email: string;
   id: string;

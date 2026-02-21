@@ -35,12 +35,12 @@ const steps = [
   "Contact Info",
 ] as const;
 
-export const PluginManagement = () => {
+export const PluginManagementPage = () => {
   const [state, setState] = useState<StateProps>({ step: 4 });
   const { loaded, step, plugin } = state;
   const { token } = antTheme.useToken();
-  const { md } = useResponsive();
   const { pluginId = "" } = useParams();
+  const { md } = useResponsive();
   const [form] = Form.useForm<Plugin>();
   const colors = useTheme();
 
