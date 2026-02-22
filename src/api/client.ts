@@ -5,7 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import { getVaults, setVaults } from "@/storage/vaults";
 import { portalApiUrl } from "@/utils/constants";
 import { toCamelCase, toSnakeCase } from "@/utils/functions";
-import { APIResponse, AuthToken } from "@/utils/types";
+import { AuthToken } from "@/utils/types";
 
 class TokenManager {
   private refreshPromise: Promise<AuthToken> | null = null;
@@ -44,12 +44,12 @@ class TokenManager {
 
     // Start a new refresh
     this.refreshPromise = axios
-      .post<APIResponse<AuthToken>>(
+      .post<AuthToken>(
         `${portalApiUrl}/auth/refresh`,
         toSnakeCase({ refreshToken }),
         { headers: { accept: "application/json" } },
       )
-      .then((res) => toCamelCase(res.data.data))
+      .then((res) => toCamelCase(res.data))
       .finally(() => {
         // Reset so future refreshes can happen
         this.refreshPromise = null;
@@ -112,36 +112,15 @@ api.interceptors.response.use(
 );
 
 const del = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-  return api
-    .delete<APIResponse<T>>(url, config)
-    .then(({ data }) => toCamelCase(data.data));
+  const { data } = await api.delete<T>(url, config);
+
+  return toCamelCase(data);
 };
 
 const get = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-  return await api
-    .get<APIResponse<T>>(url, config)
-    .then(({ data }) => toCamelCase(data.data));
-};
-//TODO: remove this function after backend fully migrate to new APIResponse format
-const getFlexible = async <T>(
-  url: string,
-  config?: AxiosRequestConfig,
-): Promise<T> => {
-  return await api.get<APIResponse<T> | T>(url, config).then(({ data }) => {
-    // Try to detect if it's wrapped in APIResponse format
-    if (
-      data &&
-      typeof data === "object" &&
-      "data" in data &&
-      "status" in data &&
-      "timestamp" in data
-    ) {
-      // It's an APIResponse<T>, extract the data field
-      return toCamelCase((data as APIResponse<T>).data);
-    }
-    // It's already in the direct format T
-    return toCamelCase(data as T);
-  });
+  const { data } = await api.get<T>(url, config);
+
+  return toCamelCase(data);
 };
 
 const post = async <T>(
@@ -149,9 +128,9 @@ const post = async <T>(
   data?: Record<string, unknown>,
   config?: AxiosRequestConfig,
 ): Promise<T> => {
-  return api
-    .post<APIResponse<T>>(url, data, config)
-    .then(({ data }) => toCamelCase(data.data));
+  const response = await api.post<T>(url, data, config);
+
+  return toCamelCase(response.data);
 };
 
 const put = async <T>(
@@ -159,16 +138,14 @@ const put = async <T>(
   data?: Record<string, unknown>,
   config?: AxiosRequestConfig,
 ): Promise<T> => {
-  return api
-    .put<APIResponse<T>>(url, data, config)
-    .then(({ data }) => toCamelCase(data.data));
+  const response = await api.put<T>(url, data, config);
+
+  return toCamelCase(response.data);
 };
 
 export const apiClient = {
   del,
   get,
-  //TODO: remove getFlexible after backend fully migrate to new APIResponse format
-  getFlexible,
   post,
   put,
   tokenManager,

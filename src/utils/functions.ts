@@ -41,6 +41,16 @@ export const cssPropertiesToString = (styles: CSSProperties) => {
     .join("\n");
 };
 
+export const formatDateWithTimezone = (date: string | number) => {
+  const d = dayjs(date);
+
+  return {
+    date: d.format("YYYY-MM-DD"),
+    time: d.format("HH:mm"),
+    timezone: `UTC${d.format("Z")}`,
+  };
+};
+
 export const getExplorerUrl = (
   chain: Chain,
   entity: "address" | "tx",
@@ -127,6 +137,15 @@ export const getExplorerUrl = (
         [chains.Zcash]: () => `${baseUrl}/tx/${value}`,
         [chains.Zksync]: () => `${baseUrl}/tx/${value}`,
       }),
+  });
+};
+
+export const imageToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 };
 
@@ -238,12 +257,14 @@ export const tinyId = () => {
   return Math.random().toString(36).slice(2, 8);
 };
 
-export const formatDateWithTimezone = (date: string | number) => {
-  const d = dayjs(date);
+export const urlToBase64 = async (url: string): Promise<string> => {
+  const res = await fetch(url);
+  const blob = await res.blob();
 
-  return {
-    date: d.format("YYYY-MM-DD"),
-    time: d.format("HH:mm"),
-    timezone: `UTC${d.format("Z")}`,
-  };
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 };

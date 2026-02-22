@@ -1,8 +1,9 @@
 import { jwtDecode } from "jwt-decode";
 
 import { apiClient } from "@/api/client";
+import { defaultPageSize } from "@/utils/constants";
 import { toSnakeCase } from "@/utils/functions";
-import { AuthToken } from "@/utils/types";
+import { AuthToken, ListParams, Plugin } from "@/utils/types";
 
 export const delAuthToken = async (token: string): Promise<void> => {
   const { token_id } = jwtDecode<{ token_id: string }>(token);
@@ -16,5 +17,23 @@ export const getAuthToken = async (data: {
   publicKey: string;
   signature: string;
 }): Promise<AuthToken> => {
-  return apiClient.post<AuthToken>("/auth", toSnakeCase(data));
+  const { token } = await apiClient.post<{ token: string }>(
+    "/auth",
+    toSnakeCase(data),
+  );
+
+  return { accessToken: token, refreshToken: token };
+};
+
+export const getPlugin = async (pluginId: string): Promise<Plugin> => {
+  return apiClient.get<Plugin>(`/plugin-proposals/${pluginId}`);
+};
+
+export const getPlugins = async ({
+  skip = 0,
+  take = defaultPageSize,
+}: ListParams): Promise<Plugin[]> => {
+  return apiClient.get<Plugin[]>("/plugin-proposals", {
+    params: { skip, take },
+  });
 };

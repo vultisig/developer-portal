@@ -1,10 +1,11 @@
 import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
 import { useResponsive } from "antd-style";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { getPlugins } from "@/api/portal";
 import { DateView } from "@/components/DateView";
-import { plugins } from "@/data/mock";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { LiveFullIcon } from "@/icons/LiveFullIcon";
 import { LoaderIcon } from "@/icons/LoaderIcon";
@@ -15,9 +16,19 @@ import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { match } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Plugin } from "@/utils/types";
+import { ListParams, Plugin } from "@/utils/types";
+
+type StateProps = {
+  loading: boolean;
+  plugins: Plugin[];
+};
 
 export const PluginsPage = () => {
+  const [state, setState] = useState<StateProps>({
+    loading: true,
+    plugins: [],
+  });
+  const { plugins } = state;
   const { token } = antTheme.useToken();
   const { md } = useResponsive();
   const colors = useTheme();
@@ -27,23 +38,27 @@ export const PluginsPage = () => {
       dataIndex: "title",
       key: "title",
       title: "Title",
-      render: (_, { logoUrl, title }) => (
-        <HStack $style={{ alignItems: "center", gap: "12px" }}>
-          <Stack
-            as="img"
-            src={logoUrl}
-            $style={{ borderRadius: "12px", height: "40px", width: "40px" }}
-          />
-          <Stack as="span">{title}</Stack>
-        </HStack>
-      ),
+      render: (_, { images, title }) => {
+        const logoUrl = images.find(({ type }) => type === "logo")?.url;
+
+        return (
+          <HStack $style={{ alignItems: "center", gap: "12px" }}>
+            <Stack
+              as="img"
+              src={logoUrl}
+              $style={{ borderRadius: "12px", height: "40px", width: "40px" }}
+            />
+            <Stack as="span">{title}</Stack>
+          </HStack>
+        );
+      },
     },
     {
       align: "center",
-      dataIndex: "categoryId",
-      key: "categoryId",
+      dataIndex: "category",
+      key: "category",
       title: "Category",
-      render: (_, { categoryId }) => (
+      render: (_, { category }) => (
         <HStack $style={{ justifyContent: "center" }}>
           <Stack
             as="span"
@@ -57,7 +72,7 @@ export const PluginsPage = () => {
               padding: "0 16px",
             }}
           >
-            {categoryId}
+            {category}
           </Stack>
         </HStack>
       ),
@@ -123,7 +138,7 @@ export const PluginsPage = () => {
                 </Stack>
               </HStack>
             ),
-            pending: () => (
+            submitted: () => (
               <HStack
                 as="span"
                 $style={{
@@ -147,16 +162,16 @@ export const PluginsPage = () => {
     },
     {
       align: "center",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "pluginId",
+      key: "pluginId",
       title: "Action",
       width: 124,
-      render: (_, { id }) => (
+      render: (_, { pluginId }) => (
         <HStack $style={{ gap: "8px", justifyContent: "center" }}>
           <Tooltip title="Update">
             <HStack
               as={Link}
-              to={routeTree.pluginUpdate.link(id)}
+              to={routeTree.pluginUpdate.link(pluginId)}
               state={true}
               $style={{
                 backgroundColor: `${colors.bgTertiary.toHex()}`,
@@ -171,7 +186,7 @@ export const PluginsPage = () => {
           <Tooltip title="Transactions">
             <HStack
               as={Link}
-              to={routeTree.pluginTransactions.link(id)}
+              to={routeTree.pluginTransactions.link(pluginId)}
               state={true}
               $style={{
                 backgroundColor: `${colors.bgTertiary.toHex()}`,
@@ -187,6 +202,18 @@ export const PluginsPage = () => {
       ),
     },
   ];
+
+  const fetchApps = useEffectEvent(async (params: ListParams) => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    const plugins = await getPlugins(params);
+
+    setState((prev) => ({ ...prev, loading: false, plugins }));
+  });
+
+  useEffect(() => {
+    fetchApps({});
+  }, []);
 
   const stats = [
     {
@@ -205,7 +232,7 @@ export const PluginsPage = () => {
       color: colors.warning,
       icon: LoaderIcon,
       label: "In Review",
-      value: plugins.filter((app) => app.status === "pending").length,
+      value: plugins.filter((app) => app.status === "submitted").length,
     },
   ];
 
@@ -283,7 +310,7 @@ export const PluginsPage = () => {
           </HStack>
         ))}
       </Stack>
-      <Table<Plugin> columns={columns} dataSource={plugins} rowKey="id" />
+      <Table<Plugin> columns={columns} dataSource={plugins} rowKey="pluginId" />
     </VStack>
   );
 };

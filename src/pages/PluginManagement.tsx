@@ -8,10 +8,11 @@ import {
 } from "antd";
 import ImgCrop from "antd-img-crop";
 import { useResponsive } from "antd-style";
-import { Fragment, useEffect, useEffectEvent, useState } from "react";
+import { FC, Fragment, useEffect, useEffectEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { getPlugin } from "@/api/portal";
 import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
 import { EmailTwoIcon } from "@/icons/EmailTwoIcon";
 import { ImagesFiveIcon } from "@/icons/ImagesFiveIcon";
@@ -20,6 +21,7 @@ import { Divider } from "@/toolkits/Divider";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { chains } from "@/utils/chain";
+import { imageToBase64, urlToBase64 } from "@/utils/functions";
 import { Plugin } from "@/utils/types";
 
 type StateProps = {
@@ -36,7 +38,7 @@ const steps = [
 ] as const;
 
 export const PluginManagementPage = () => {
-  const [state, setState] = useState<StateProps>({ step: 4 });
+  const [state, setState] = useState<StateProps>({ step: 1 });
   const { loaded, step, plugin } = state;
   const { token } = antTheme.useToken();
   const { pluginId = "" } = useParams();
@@ -46,15 +48,27 @@ export const PluginManagementPage = () => {
 
   const handleFinish: FormProps<Plugin>["onFinish"] = (values) => {
     console.log("Form values:", values);
+
+    if (step < steps.length) {
+      setState((prev) => ({ ...prev, step: prev.step + 1 }));
+    }
   };
 
-  const handlePluginChange = useEffectEvent((pluginId: string) => {
+  const handlePluginChange = useEffectEvent(async (pluginId: string) => {
     if (pluginId) {
       setState((prev) => ({ ...prev, loaded: false }));
 
-      setTimeout(() => {
-        setState((prev) => ({ ...prev, loaded: true }));
-      }, 1000);
+      const { images, ...plugin } = await getPlugin(pluginId);
+
+      setState((prev) => ({ ...prev, loaded: true }));
+
+      const logoUrl = images.find(({ type }) => type === "logo")?.url;
+      const thumbnailUrl = images.find(({ type }) => type === "thumbnail")?.url;
+
+      if (logoUrl) plugin.logo = await urlToBase64(logoUrl);
+      if (thumbnailUrl) plugin.thumbnail = await urlToBase64(thumbnailUrl);
+
+      form.setFieldsValue(plugin);
     } else {
       setState((prev) => ({ ...prev, loaded: true }));
     }
@@ -194,65 +208,80 @@ export const PluginManagementPage = () => {
             >
               <Stack $style={{ display: step === 1 ? "block" : "none" }}>
                 <Form.Item<Plugin>
-                  name="logoUrl"
+                  name="logo"
                   rules={[
                     {
                       required: true,
                       message: "Please upload your plugin logo!",
                     },
                   ]}
-                  valuePropName="fileList"
                 >
-                  <HStack $style={{ alignItems: "center", gap: "16px" }}>
-                    <ImgCrop>
-                      <Upload listType="picture-card" showUploadList={false}>
-                        <VStack
-                          $style={{
-                            alignItems: "center",
-                            backgroundColor: colors.bgTertiary.toHex(),
-                            borderRadius: "12px",
-                            color: colors.accentFour.toHex(),
-                            height: "48px",
-                            justifyContent: "center",
-                            width: "48px",
-                          }}
-                        >
-                          {<ImagesFiveIcon fontSize={24} />}
-                        </VStack>
-                      </Upload>
-                    </ImgCrop>
-                    <VStack $style={{ gap: "12px" }}>
-                      <Stack
-                        as="span"
-                        $style={{ fontSize: "16px", lineHeight: "24px" }}
-                      >
-                        Choose Plugin Icon
-                      </Stack>
-                      <VStack
-                        as="span"
-                        $style={{
-                          color: colors.textTertiary.toHex(),
-                          fontSize: "12px",
-                          lineHeight: "16px",
-                        }}
-                      >
-                        JPG/PNG/WebP Recommended Square image
-                      </VStack>
-                    </VStack>
-                  </HStack>
+                  <UploadLogo />
                 </Form.Item>
                 <Form.Item<Plugin>
-                  name="bannerUrl"
+                  name="thumbnail"
                   rules={[
                     {
                       required: true,
-                      message: "Please upload your banner image!",
+                      message: "Please upload your thumbnail image!",
                     },
                   ]}
+                >
+                  <UploadThumbnail />
+                </Form.Item>
+                <Form.Item<Plugin>
+                  label="Plugin Name"
+                  name="title"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please input your plugin name!",
+                    },
+                  ]}
+                >
+                  <Input placeholder="e.g., DCA Plugin" />
+                </Form.Item>
+                <Form.Item<Plugin>
+                  label="Plugin ID"
+                  name="pluginId"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please input your plugin ID!",
+                    },
+                  ]}
+                  extra="lowercase, kebab-case"
+                >
+                  <Input placeholder="e.g., vultisig-dca-1000" />
+                </Form.Item>
+                <Form.Item<Plugin>
+                  label="Short Description"
+                  name="shortDescription"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please input your plugin description!",
+                    },
+                  ]}
+                >
+                  <Input.TextArea placeholder="Briefly describe your plugin does" />
+                </Form.Item>
+                <Form.Item<Plugin>
+                  label="Description Images"
+                  name="images"
                   valuePropName="fileList"
                 >
-                  <ImgCrop aspect={4 / 3}>
-                    <Upload.Dragger multiple={false} showUploadList={false}>
+                  <Upload.Dragger multiple>
+                    <VStack
+                      $style={{
+                        alignItems: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                        justifyContent: "center",
+                        padding: "40px",
+                      }}
+                    >
                       <VStack
                         $style={{
                           alignItems: "center",
@@ -270,7 +299,7 @@ export const PluginManagementPage = () => {
                         as="span"
                         $style={{ fontSize: "16px", lineHeight: "24px" }}
                       >
-                        Choose Plugin Banner
+                        Description Images
                       </Stack>
                       <VStack
                         as="span"
@@ -280,90 +309,9 @@ export const PluginManagementPage = () => {
                           lineHeight: "16px",
                         }}
                       >
-                        <Stack as="span">JPG/PNG/WebP aspect ratio 3:2</Stack>
-                        <Stack as="span">recommended 1620 × 1080px size</Stack>
+                        <Stack as="span">JPG/PNG/WebP Max images: 6</Stack>
+                        <Stack as="span">Max file size per image: 2 MB</Stack>
                       </VStack>
-                    </Upload.Dragger>
-                  </ImgCrop>
-                </Form.Item>
-                <Form.Item<Plugin>
-                  label="Plugin Name"
-                  name="title"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please input your plugin name!",
-                    },
-                  ]}
-                >
-                  <Input placeholder="e.g., DCA Plugin" />
-                </Form.Item>
-                <Form.Item<Plugin>
-                  label="Plugin ID"
-                  name="id"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please input your plugin ID!",
-                    },
-                  ]}
-                  extra="lowercase, kebab-case"
-                >
-                  <Input placeholder="e.g., vultisig-dca-1000" />
-                </Form.Item>
-                <Form.Item<Plugin>
-                  label="Short Description"
-                  name="description"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please input your plugin description!",
-                    },
-                  ]}
-                >
-                  <Input.TextArea placeholder="Briefly describe your plugin does" />
-                </Form.Item>
-                <Form.Item<Plugin>
-                  label="Description Images"
-                  name="images"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please upload your plugin images!",
-                    },
-                  ]}
-                  valuePropName="fileList"
-                >
-                  <Upload.Dragger multiple>
-                    <VStack
-                      $style={{
-                        alignItems: "center",
-                        backgroundColor: colors.bgTertiary.toHex(),
-                        borderRadius: "12px",
-                        color: colors.accentFour.toHex(),
-                        height: "48px",
-                        justifyContent: "center",
-                        width: "48px",
-                      }}
-                    >
-                      {<ImagesFiveIcon fontSize={24} />}
-                    </VStack>
-                    <Stack
-                      as="span"
-                      $style={{ fontSize: "16px", lineHeight: "24px" }}
-                    >
-                      Description Images
-                    </Stack>
-                    <VStack
-                      as="span"
-                      $style={{
-                        color: colors.textTertiary.toHex(),
-                        fontSize: "12px",
-                        lineHeight: "16px",
-                      }}
-                    >
-                      <Stack as="span">JPG/PNG/WebP Max images: 6</Stack>
-                      <Stack as="span">Max file size per image: 2 MB</Stack>
                     </VStack>
                   </Upload.Dragger>
                 </Form.Item>
@@ -404,17 +352,21 @@ export const PluginManagementPage = () => {
               <Stack $style={{ display: step === 4 ? "block" : "none" }}>
                 <Form.Item<Plugin>
                   label="Contact Email"
-                  name="email"
+                  name="contactEmail"
                   rules={[
                     {
                       required: true,
                       message: "Please input your contact email!",
                     },
+                    {
+                      type: "email",
+                      message: "Please input a valid contact email!",
+                    },
                   ]}
                 >
                   <Input placeholder="https://your-plugin.example.com" />
                 </Form.Item>
-                <Form.Item label="Optional notes" name="notes">
+                <Form.Item<Plugin> label="Optional notes" name="notes">
                   <Input.TextArea placeholder="Any additional information or questions" />
                 </Form.Item>
               </Stack>
@@ -453,5 +405,131 @@ export const PluginManagementPage = () => {
         </VStack>
       </VStack>
     </>
+  );
+};
+
+const UploadLogo: FC<{
+  onChange?: (value?: string) => void;
+  value?: string;
+}> = ({ onChange, value }) => {
+  const colors = useTheme();
+
+  return (
+    <HStack $style={{ alignItems: "center", gap: "16px" }}>
+      <ImgCrop>
+        <Upload
+          beforeUpload={async (file) => {
+            const base64 = await imageToBase64(file);
+
+            onChange?.(base64);
+
+            return false;
+          }}
+          listType="picture-card"
+          multiple={false}
+          showUploadList={false}
+        >
+          {value ? (
+            <VStack as="img" src={value} $style={{ width: "100%" }} />
+          ) : (
+            <VStack
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "12px",
+                color: colors.accentFour.toHex(),
+                height: "48px",
+                justifyContent: "center",
+                width: "48px",
+              }}
+            >
+              {<ImagesFiveIcon fontSize={24} />}
+            </VStack>
+          )}
+        </Upload>
+      </ImgCrop>
+      <VStack $style={{ gap: "12px" }}>
+        <Stack as="span" $style={{ fontSize: "16px", lineHeight: "24px" }}>
+          Choose Plugin Icon
+        </Stack>
+        <VStack
+          as="span"
+          $style={{
+            color: colors.textTertiary.toHex(),
+            fontSize: "12px",
+            lineHeight: "16px",
+          }}
+        >
+          JPG/PNG/WebP Recommended Square image
+        </VStack>
+      </VStack>
+    </HStack>
+  );
+};
+
+const UploadThumbnail: FC<{
+  onChange?: (value?: string) => void;
+  value?: string;
+}> = ({ onChange, value }) => {
+  const colors = useTheme();
+
+  return (
+    <ImgCrop aspect={4 / 3}>
+      <Upload.Dragger
+        beforeUpload={async (file) => {
+          const base64 = await imageToBase64(file);
+
+          onChange?.(base64);
+
+          return false;
+        }}
+        listType="picture-card"
+        multiple={false}
+        showUploadList={false}
+      >
+        {value ? (
+          <VStack as="img" src={value} $style={{ width: "100%" }} />
+        ) : (
+          <VStack
+            $style={{
+              alignItems: "center",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              justifyContent: "center",
+              padding: "40px",
+            }}
+          >
+            <VStack
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "12px",
+                color: colors.accentFour.toHex(),
+                height: "48px",
+                justifyContent: "center",
+                width: "48px",
+              }}
+            >
+              {<ImagesFiveIcon fontSize={24} />}
+            </VStack>
+            <Stack as="span" $style={{ fontSize: "16px", lineHeight: "24px" }}>
+              Choose Plugin Thumbnail
+            </Stack>
+            <VStack
+              as="span"
+              $style={{
+                color: colors.textTertiary.toHex(),
+                fontSize: "12px",
+                lineHeight: "16px",
+              }}
+            >
+              <Stack as="span">JPG/PNG/WebP aspect ratio 3:2</Stack>
+              <Stack as="span">recommended 1620 × 1080px size</Stack>
+            </VStack>
+          </VStack>
+        )}
+      </Upload.Dragger>
+    </ImgCrop>
   );
 };

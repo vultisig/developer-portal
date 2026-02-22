@@ -180,16 +180,20 @@ const useStyles = createStyles(({ css, cssVar, prefixCls }) => ({
     }
   `,
   upload: css`
+    .${prefixCls}-upload {
+      &.${prefixCls}-upload-select {
+        overflow: hidden;
+      }
+    }
+
     .${prefixCls}-upload-drag {
-      .${prefixCls}-upload-btn {
-        .${prefixCls}-upload-drag-container {
-          align-items: center;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          justify-content: center;
-          padding: 40px;
-        }
+      .${prefixCls}-upload {
+        overflow: hidden;
+        padding: 0;
+      }
+
+      .${prefixCls}-upload-drag-container {
+        display: block;
       }
     }
   `,

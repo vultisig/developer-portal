@@ -16,6 +16,16 @@ export type AuthToken = {
 
 export type CSSProperties = CSS.Properties<string>;
 
+export type Image = {
+  contentType: "image/jpeg" | "image/png";
+  data: string;
+  filename: string;
+  id: string;
+  imageOrder: number;
+  type: "logo" | "media" | "thumbnail";
+  url: string;
+};
+
 export type OneInchToken = {
   address: string;
   symbol: string;
@@ -32,20 +42,27 @@ export type JupiterToken = {
   name: string;
 };
 
+export type ListParams = {
+  skip?: number;
+  take?: number;
+};
+
 export type Plugin = {
-  bannerUrl: string;
-  categoryId: string;
+  category: string;
+  contactEmail: string;
   createdAt: string;
-  description: string;
-  email: string;
-  id: string;
-  images: string[];
-  logoUrl: string;
-  price: string;
+  images: Image[];
+  logo: string;
+  notes: string;
+  pluginId: string;
+  pricingModel: "free" | "once" | "per-tx";
   serverEndpoint: string;
-  status: "active" | "pending";
-  supportedChains: string[];
+  shortDescription: string;
+  status: "active" | "submitted";
+  supportedChains: Chain[];
   title: string;
+  thumbnail?: string;
+  updatedAt: string;
 };
 
 export type Token = {
