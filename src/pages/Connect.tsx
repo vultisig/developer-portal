@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { useApp } from "@/hooks/useApp";
 import { AnalyticsIcon } from "@/icons/AnalyticsIcon";
 import { CurrencyDollarIcon } from "@/icons/CurrencyDollarIcon";
 import { VultisigLogoIcon } from "@/icons/VultisigLogoIcon";
@@ -11,6 +13,7 @@ import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { routeTree } from "@/utils/routes";
 
 export const ConnectPage = () => {
+  const { connect, vault } = useApp();
   const navigate = useNavigate();
   const colors = useTheme();
 
@@ -28,6 +31,12 @@ export const ConnectPage = () => {
       text: "Manage plugins, analytics, and earnings in one place",
     },
   ];
+
+  useEffect(() => {
+    if (!vault) return;
+
+    navigate(routeTree.root.path, { replace: true });
+  }, [vault, navigate]);
 
   return (
     <VStack $style={{ gap: "40px", maxWidth: "768px", width: "100%" }}>
@@ -92,9 +101,7 @@ export const ConnectPage = () => {
       <Stack
         as={Button}
         icon={<WalletIcon fontSize={20} />}
-        onClick={() =>
-          navigate(routeTree.projectManagement.link("create"), { state: true })
-        }
+        onClick={connect}
         $style={{ width: "300px" }}
       >
         Connect Wallet

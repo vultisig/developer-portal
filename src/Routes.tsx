@@ -1,6 +1,11 @@
 import { FC, ReactNode, useEffect } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
 
+import { useApp } from "@/hooks/useApp";
 import { useCore } from "@/hooks/useCore";
 import { AuthLayout } from "@/layouts/Auth";
 import { DefaultLayout } from "@/layouts/Default";
@@ -34,11 +39,21 @@ const setCurrentRoute = (route: RouteKey, element: ReactNode) => (
   <SetCurrentRoute route={route}>{element}</SetCurrentRoute>
 );
 
+const ProtectedRoute: FC<{ children: ReactNode }> = ({ children }) => {
+  const { vault } = useApp();
+
+  return !vault ? <Navigate to={routeTree.account.path} replace /> : children;
+};
+
 export const Routes = () => {
   const router = createBrowserRouter([
     {
       path: routeTree.root.path,
-      element: <DefaultLayout />,
+      element: (
+        <ProtectedRoute>
+          <DefaultLayout />
+        </ProtectedRoute>
+      ),
       children: [
         { index: true, element: setCurrentRoute("root", <DashboardPage />) },
         {
