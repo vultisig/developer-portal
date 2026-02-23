@@ -2,6 +2,7 @@ import {
   Form,
   FormProps,
   Input,
+  Masonry,
   Select,
   theme as antTheme,
   Upload,
@@ -12,8 +13,9 @@ import { FC, Fragment, useEffect, useEffectEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getPlugin } from "@/api/portal";
+import { createPlugin, getPlugin } from "@/api/portal";
 import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
+import { CrossLargeIcon } from "@/icons/CrossLargeIcon";
 import { EmailTwoIcon } from "@/icons/EmailTwoIcon";
 import { ImagesFiveIcon } from "@/icons/ImagesFiveIcon";
 import { Button } from "@/toolkits/Button";
@@ -21,8 +23,13 @@ import { Divider } from "@/toolkits/Divider";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { chains } from "@/utils/chain";
-import { imageToBase64, urlToBase64 } from "@/utils/functions";
-import { Plugin } from "@/utils/types";
+import {
+  imageToBase64,
+  parseBase64DataUrl,
+  tinyId,
+  urlToBase64,
+} from "@/utils/functions";
+import { Image, ImageMime, Plugin } from "@/utils/types";
 
 type StateProps = {
   plugin?: Plugin;
@@ -46,11 +53,57 @@ export const PluginManagementPage = () => {
   const [form] = Form.useForm<Plugin>();
   const colors = useTheme();
 
-  const handleFinish: FormProps<Plugin>["onFinish"] = (values) => {
-    console.log("Form values:", values);
-
+  const handleFinish: FormProps<Plugin>["onFinish"] = ({
+    logo,
+    media = [],
+    thumbnail,
+    ...values
+  }) => {
     if (step < steps.length) {
       setState((prev) => ({ ...prev, step: prev.step + 1 }));
+    } else {
+      const images: Pick<
+        Image,
+        "contentType" | "data" | "filename" | "type"
+      >[] = [];
+
+      if (logo) {
+        const { base64, mime } = parseBase64DataUrl(logo);
+
+        images.push({
+          contentType: mime as ImageMime,
+          data: base64,
+          filename: `logo-${tinyId()}`,
+          type: "logo",
+        });
+      }
+
+      if (thumbnail) {
+        const { base64, mime } = parseBase64DataUrl(thumbnail);
+
+        images.push({
+          contentType: mime as ImageMime,
+          data: base64,
+          filename: `thumbnail-${tinyId()}`,
+          type: "thumbnail",
+        });
+      }
+
+      media.forEach((image) => {
+        const { base64, mime } = parseBase64DataUrl(image);
+
+        images.push({
+          contentType: mime as ImageMime,
+          data: base64,
+          filename: `media-${tinyId()}`,
+          type: "media",
+        });
+      });
+
+      values.category = "app";
+      values.images = images as Image[];
+
+      createPlugin(values);
     }
   };
 
@@ -266,54 +319,8 @@ export const PluginManagementPage = () => {
                 >
                   <Input.TextArea placeholder="Briefly describe your plugin does" />
                 </Form.Item>
-                <Form.Item<Plugin>
-                  label="Description Images"
-                  name="images"
-                  valuePropName="fileList"
-                >
-                  <Upload.Dragger multiple>
-                    <VStack
-                      $style={{
-                        alignItems: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                        justifyContent: "center",
-                        padding: "40px",
-                      }}
-                    >
-                      <VStack
-                        $style={{
-                          alignItems: "center",
-                          backgroundColor: colors.bgTertiary.toHex(),
-                          borderRadius: "12px",
-                          color: colors.accentFour.toHex(),
-                          height: "48px",
-                          justifyContent: "center",
-                          width: "48px",
-                        }}
-                      >
-                        {<ImagesFiveIcon fontSize={24} />}
-                      </VStack>
-                      <Stack
-                        as="span"
-                        $style={{ fontSize: "16px", lineHeight: "24px" }}
-                      >
-                        Description Images
-                      </Stack>
-                      <VStack
-                        as="span"
-                        $style={{
-                          color: colors.textTertiary.toHex(),
-                          fontSize: "12px",
-                          lineHeight: "16px",
-                        }}
-                      >
-                        <Stack as="span">JPG/PNG/WebP Max images: 6</Stack>
-                        <Stack as="span">Max file size per image: 2 MB</Stack>
-                      </VStack>
-                    </VStack>
-                  </Upload.Dragger>
+                <Form.Item<Plugin> label="Description Images" name="media">
+                  <UploadMedia />
                 </Form.Item>
               </Stack>
               <Stack $style={{ display: step === 2 ? "block" : "none" }}>
@@ -322,7 +329,7 @@ export const PluginManagementPage = () => {
                   name="serverEndpoint"
                   rules={[
                     {
-                      required: true,
+                      required: step > 1,
                       message: "Please input your plugin server endpoint!",
                     },
                   ]}
@@ -334,7 +341,7 @@ export const PluginManagementPage = () => {
                   name="supportedChains"
                   rules={[
                     {
-                      required: true,
+                      required: step > 1,
                       message: "Please select your supported blockchains!",
                     },
                   ]}
@@ -355,7 +362,7 @@ export const PluginManagementPage = () => {
                   name="contactEmail"
                   rules={[
                     {
-                      required: true,
+                      required: step > 3,
                       message: "Please input your contact email!",
                     },
                     {
@@ -467,6 +474,104 @@ const UploadLogo: FC<{
   );
 };
 
+const UploadMedia: FC<{
+  onChange?: (value?: string[]) => void;
+  value?: string[];
+}> = ({ onChange, value = [] }) => {
+  const { sm } = useResponsive();
+  const colors = useTheme();
+
+  return (
+    <VStack $style={{ gap: "16px" }}>
+      {value.length > 0 && (
+        <Masonry
+          columns={sm ? 2 : 1}
+          gutter={16}
+          items={value.map((data, key) => ({ data, key }))}
+          itemRender={({ data, key }) => (
+            <VStack $style={{ position: "relative" }}>
+              <HStack
+                as="span"
+                onClick={() => onChange?.(value.filter((_, i) => i !== key))}
+                $style={{
+                  backgroundColor: colors.bgPrimary.toRgba(0.1),
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  padding: "12px",
+                  position: "absolute",
+                  right: "8px",
+                  top: "8px",
+                }}
+                $hover={{ backgroundColor: colors.bgPrimary.toRgba(0.2) }}
+              >
+                <CrossLargeIcon fontSize={16} />
+              </HStack>
+              <Stack
+                as="img"
+                alt="Media image"
+                src={data}
+                $style={{ borderRadius: "12px", width: "100%" }}
+              />
+            </VStack>
+          )}
+        />
+      )}
+      <Upload.Dragger
+        beforeUpload={async (file) => {
+          const base64 = await imageToBase64(file);
+
+          onChange?.([...value, base64]);
+
+          return false;
+        }}
+        listType="picture-card"
+        multiple={false}
+        disabled={value.length >= 6}
+        showUploadList={false}
+      >
+        <VStack
+          $style={{
+            alignItems: "center",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+            justifyContent: "center",
+            padding: "40px",
+          }}
+        >
+          <VStack
+            $style={{
+              alignItems: "center",
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderRadius: "12px",
+              color: colors.accentFour.toHex(),
+              height: "48px",
+              justifyContent: "center",
+              width: "48px",
+            }}
+          >
+            {<ImagesFiveIcon fontSize={24} />}
+          </VStack>
+          <Stack as="span" $style={{ fontSize: "16px", lineHeight: "24px" }}>
+            Description Images
+          </Stack>
+          <VStack
+            as="span"
+            $style={{
+              color: colors.textTertiary.toHex(),
+              fontSize: "12px",
+              lineHeight: "16px",
+            }}
+          >
+            <Stack as="span">JPG/PNG/WebP Max images: 6</Stack>
+            <Stack as="span">Max file size per image: 2 MB</Stack>
+          </VStack>
+        </VStack>
+      </Upload.Dragger>
+    </VStack>
+  );
+};
+
 const UploadThumbnail: FC<{
   onChange?: (value?: string) => void;
   value?: string;
@@ -474,7 +579,7 @@ const UploadThumbnail: FC<{
   const colors = useTheme();
 
   return (
-    <ImgCrop aspect={4 / 3}>
+    <ImgCrop aspect={3 / 2}>
       <Upload.Dragger
         beforeUpload={async (file) => {
           const base64 = await imageToBase64(file);

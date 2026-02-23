@@ -158,6 +158,17 @@ export const match = <T extends string | number | symbol, V>(
   return handler();
 };
 
+export const parseBase64DataUrl = (
+  dataUrl: string,
+): { mime: string; base64: string } => {
+  const [prefix, base64] = dataUrl.split(",");
+
+  const mimeMatch = prefix.match(/data:(.*);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : "";
+
+  return { mime, base64 };
+};
+
 export const scrollSelectDropdownToTop = (dropdownClassName: string) => {
   requestAnimationFrame(() => {
     const holder = document.querySelector(

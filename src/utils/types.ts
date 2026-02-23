@@ -17,7 +17,7 @@ export type AuthToken = {
 export type CSSProperties = CSS.Properties<string>;
 
 export type Image = {
-  contentType: "image/jpeg" | "image/png";
+  contentType: ImageMime;
   data: string;
   filename: string;
   id: string;
@@ -25,6 +25,8 @@ export type Image = {
   type: "logo" | "media" | "thumbnail";
   url: string;
 };
+
+export type ImageMime = "image/jpeg" | "image/png";
 
 export type OneInchToken = {
   address: string;
@@ -52,7 +54,8 @@ export type Plugin = {
   contactEmail: string;
   createdAt: string;
   images: Image[];
-  logo: string;
+  logo?: string; // Only for form submission, not returned by API
+  media?: string[]; // Only for form submission, not returned by API
   notes: string;
   pluginId: string;
   pricingModel: "free" | "once" | "per-tx";
@@ -61,7 +64,7 @@ export type Plugin = {
   status: "active" | "submitted";
   supportedChains: Chain[];
   title: string;
-  thumbnail?: string;
+  thumbnail?: string; // Only for form submission, not returned by API
   updatedAt: string;
 };
 

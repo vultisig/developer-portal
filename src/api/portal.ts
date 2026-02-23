@@ -25,6 +25,10 @@ export const getAuthToken = async (data: {
   return { accessToken: token, refreshToken: token };
 };
 
+export const createPlugin = async (plugin: Plugin): Promise<void> => {
+  return apiClient.post("/plugin-proposals", toSnakeCase(plugin));
+};
+
 export const getPlugin = async (pluginId: string): Promise<Plugin> => {
   return apiClient.get<Plugin>(`/plugin-proposals/${pluginId}`);
 };
