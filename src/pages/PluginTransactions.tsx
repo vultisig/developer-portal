@@ -1,12 +1,14 @@
-import { Table, TableProps, theme as antTheme,Tooltip } from "antd";
+import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
 import { useResponsive } from "antd-style";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { getPlugin } from "@/api/portal";
 import { AmoutView } from "@/components/AmoutView";
 import { DateView } from "@/components/DateView";
 import { TokenView } from "@/components/TokenView";
-import { plugins, transactions } from "@/data/mock";
+import { transactions } from "@/data/mock";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
@@ -17,14 +19,20 @@ import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { camelCaseToTitle, getExplorerUrl, match } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Transaction } from "@/utils/types";
+import { Plugin, Transaction } from "@/utils/types";
+
+type StateProps = {
+  plugin?: Plugin;
+};
 
 export const PluginTransactionsPage = () => {
+  const [state, setState] = useState<StateProps>({});
+  const { plugin } = state;
   const { token } = antTheme.useToken();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
   const colors = useTheme();
-  const plugin = plugins.find(({ id }) => id === pluginId);
+  const logoUrl = plugin?.images.find(({ type }) => type === "logo")?.url;
 
   const columns: TableProps<Transaction>["columns"] = [
     {
@@ -125,6 +133,18 @@ export const PluginTransactionsPage = () => {
     },
   ];
 
+  const handlePluginChange = useEffectEvent(async (pluginId: string) => {
+    setState((prev) => ({ ...prev, plugin: undefined }));
+
+    const plugin = await getPlugin(pluginId);
+
+    setState((prev) => ({ ...prev, plugin }));
+  });
+
+  useEffect(() => {
+    handlePluginChange(pluginId);
+  }, [pluginId]);
+
   const stats = [
     {
       color: colors.info,
@@ -166,7 +186,7 @@ export const PluginTransactionsPage = () => {
         >
           <Stack
             as="img"
-            src={plugin.logoUrl}
+            src={logoUrl}
             $style={{ borderRadius: "12px", height: "44px", width: "44px" }}
           />
           <Stack
@@ -214,7 +234,7 @@ export const PluginTransactionsPage = () => {
                 </Stack>
               </HStack>
             ),
-            pending: () => (
+            submitted: () => (
               <HStack
                 as="span"
                 $style={{
@@ -235,7 +255,7 @@ export const PluginTransactionsPage = () => {
           })}
         </HStack>
         <Button
-          href={routeTree.pluginUpdate.link(plugin.id)}
+          href={routeTree.pluginUpdate.link(plugin.pluginId)}
           icon={<PencilLineIcon fontSize={16} />}
           state={true}
         >

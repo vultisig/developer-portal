@@ -169,16 +169,6 @@ export const parseBase64DataUrl = (
   return { mime, base64 };
 };
 
-export const scrollSelectDropdownToTop = (dropdownClassName: string) => {
-  requestAnimationFrame(() => {
-    const holder = document.querySelector(
-      `.${dropdownClassName} .rc-virtual-list-holder`,
-    ) as HTMLDivElement | null;
-
-    holder?.scrollTo({ top: 0 });
-  });
-};
-
 export const snakeCaseToTitle = (input: string) => {
   if (!input) return input;
 

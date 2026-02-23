@@ -13,7 +13,7 @@ import { FC, Fragment, useEffect, useEffectEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { createPlugin, getPlugin } from "@/api/portal";
+import { createPlugin, getPlugin, validatePluginId } from "@/api/portal";
 import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
 import { CrossLargeIcon } from "@/icons/CrossLargeIcon";
 import { EmailTwoIcon } from "@/icons/EmailTwoIcon";
@@ -40,7 +40,7 @@ type StateProps = {
 const steps = [
   "Plugin Basics",
   "Technical Details",
-  "plugin-config.yaml",
+  // "plugin-config.yaml",
   "Contact Info",
 ] as const;
 
@@ -295,6 +295,7 @@ export const PluginManagementPage = () => {
                   <Input placeholder="e.g., DCA Plugin" />
                 </Form.Item>
                 <Form.Item<Plugin>
+                  extra="lowercase, kebab-case"
                   label="Plugin ID"
                   name="pluginId"
                   rules={[
@@ -302,8 +303,27 @@ export const PluginManagementPage = () => {
                       required: true,
                       message: "Please input your plugin ID!",
                     },
+                    {
+                      pattern: /^[a-z0-9]+(-[a-z0-9]+)*$/,
+                      message: "Plugin ID must be lowercase and kebab-case!",
+                    },
+                    {
+                      validator: async (_, value) => {
+                        if (!value) return;
+
+                        const available = await validatePluginId(value);
+
+                        if (!available) {
+                          return Promise.reject(
+                            new Error("This plugin ID is already taken!"),
+                          );
+                        }
+
+                        return Promise.resolve();
+                      },
+                    },
                   ]}
-                  extra="lowercase, kebab-case"
+                  hasFeedback
                 >
                   <Input placeholder="e.g., vultisig-dca-1000" />
                 </Form.Item>
@@ -356,13 +376,13 @@ export const PluginManagementPage = () => {
                   />
                 </Form.Item>
               </Stack>
-              <Stack $style={{ display: step === 4 ? "block" : "none" }}>
+              <Stack $style={{ display: step === 3 ? "block" : "none" }}>
                 <Form.Item<Plugin>
                   label="Contact Email"
                   name="contactEmail"
                   rules={[
                     {
-                      required: step > 3,
+                      required: step > 2,
                       message: "Please input your contact email!",
                     },
                     {

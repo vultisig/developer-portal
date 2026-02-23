@@ -41,3 +41,15 @@ export const getPlugins = async ({
     params: { skip, take },
   });
 };
+
+export const validatePluginId = async (pluginId: string): Promise<boolean> => {
+  try {
+    const { available } = await apiClient.get<{ available: boolean }>(
+      `/plugin-proposals/validate/${pluginId}`,
+    );
+
+    return available;
+  } catch {
+    return false;
+  }
+};

@@ -1,10 +1,11 @@
 import { theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
 import dayjs from "dayjs";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { plugins } from "@/data/mock";
+import { getPlugins } from "@/api/portal";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { InboxEmptyIcon } from "@/icons/InboxEmptyIcon";
 import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
@@ -12,17 +13,44 @@ import { PlusSmallIcon } from "@/icons/PlusSmallIcon";
 import { PuzzleIcon } from "@/icons/PuzzleIcon";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { routeTree } from "@/utils/routes";
+import { ListParams, Plugin } from "@/utils/types";
+
+type StateProps = {
+  loading: boolean;
+  plugins: Plugin[];
+};
 
 export const DashboardPage = () => {
+  const [state, setState] = useState<StateProps>({
+    loading: true,
+    plugins: [],
+  });
+  const { plugins } = state;
   const { token } = antTheme.useToken();
   const { md, xl } = useResponsive();
   const colors = useTheme();
 
+  const fetchApps = useEffectEvent(async (params: ListParams) => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    const plugins = await getPlugins(params);
+
+    setState((prev) => ({ ...prev, loading: false, plugins }));
+  });
+
   const items = [
     { icon: <DollarIcon />, title: "Total Revenue", value: "$2.3k" },
     { icon: <PeopleCopyIcon />, title: "Total Users", value: "2.8k" },
-    { icon: <PuzzleIcon />, title: "Total Plugins", value: "5" },
+    {
+      icon: <PuzzleIcon />,
+      title: "Total Plugins",
+      value: String(plugins.length),
+    },
   ];
+
+  useEffect(() => {
+    fetchApps({});
+  }, []);
 
   return (
     <VStack
@@ -203,157 +231,162 @@ export const DashboardPage = () => {
           <VStack $style={{ gap: "12px" }}>
             {plugins.map(
               ({
-                categoryId,
+                category,
                 createdAt,
-                description,
-                id,
-                logoUrl,
-                price,
+                shortDescription,
+                pluginId,
+                images,
                 title,
-              }) => (
-                <VStack
-                  key={id}
-                  $style={{
-                    backgroundColor: colors.bgSecondary.toHex(),
-                    borderColor: colors.borderLight.toHex(),
-                    borderStyle: "solid",
-                    borderWidth: "1px",
-                    gap: "16px",
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                    padding: "20px",
-                  }}
-                >
-                  <HStack
+              }) => {
+                const logoUrl = images.find(({ type }) => type === "logo")?.url;
+
+                return (
+                  <VStack
+                    key={pluginId}
                     $style={{
-                      alignItems: "flex-start",
+                      backgroundColor: colors.bgSecondary.toHex(),
+                      borderColor: colors.borderLight.toHex(),
+                      borderStyle: "solid",
+                      borderWidth: "1px",
                       gap: "16px",
-                      justifyContent: "space-between",
+                      borderRadius: "16px",
                       overflow: "hidden",
+                      padding: "20px",
                     }}
                   >
-                    <HStack $style={{ gap: "16px", overflow: "hidden" }}>
-                      <Stack
-                        as="img"
-                        src={logoUrl}
-                        $style={{
-                          borderRadius: "16px",
-                          height: "50px",
-                          width: "50px",
-                        }}
-                      />
-                      <VStack $style={{ gap: "8px", overflow: "hidden" }}>
-                        <HStack $style={{ gap: "8px" }}>
+                    <HStack
+                      $style={{
+                        alignItems: "flex-start",
+                        gap: "16px",
+                        justifyContent: "space-between",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <HStack $style={{ gap: "16px", overflow: "hidden" }}>
+                        {Boolean(logoUrl) && (
+                          <Stack
+                            as="img"
+                            src={logoUrl}
+                            $style={{
+                              borderRadius: "16px",
+                              height: "50px",
+                              width: "50px",
+                            }}
+                          />
+                        )}
+                        <VStack $style={{ gap: "8px", overflow: "hidden" }}>
+                          <HStack $style={{ gap: "8px" }}>
+                            <Stack
+                              as="span"
+                              $style={{
+                                fontSize: "18px",
+                                lineHeight: "24px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {title}
+                            </Stack>
+                            <Stack
+                              as="span"
+                              $style={{
+                                backgroundColor: colors.info.toRgba(0.1),
+                                borderRadius: "4px",
+                                color: colors.info.toHex(),
+                                flex: "none",
+                                fontSize: "12px",
+                                lineHeight: "24px",
+                                padding: "0 16px",
+                              }}
+                            >
+                              {category}
+                            </Stack>
+                          </HStack>
                           <Stack
                             as="span"
                             $style={{
-                              fontSize: "18px",
-                              lineHeight: "24px",
+                              color: colors.textTertiary.toHex(),
+                              fontSize: "13px",
+                              lineHeight: "18px",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {title}
+                            {shortDescription}
                           </Stack>
-                          <Stack
-                            as="span"
-                            $style={{
-                              backgroundColor: colors.info.toRgba(0.1),
-                              borderRadius: "4px",
-                              color: colors.info.toHex(),
-                              flex: "none",
-                              fontSize: "12px",
-                              lineHeight: "24px",
-                              padding: "0 16px",
-                            }}
-                          >
-                            {categoryId}
-                          </Stack>
-                        </HStack>
+                        </VStack>
+                      </HStack>
+                      <HStack
+                        $style={{
+                          alignItems: "center",
+                          backgroundColor: colors.success.toRgba(0.05),
+                          borderRadius: "4px",
+                          gap: "4px",
+                          padding: "0 8px",
+                        }}
+                      >
+                        <Stack
+                          as="span"
+                          $style={{
+                            backgroundColor: colors.success.toHex(),
+                            borderRadius: "50%",
+                            height: "6px",
+                            width: "6px",
+                          }}
+                        />
+                        <Stack
+                          as="span"
+                          $style={{
+                            color: colors.success.toHex(),
+                            fontSize: "12px",
+                            lineHeight: "24px",
+                          }}
+                        >
+                          Live
+                        </Stack>
+                      </HStack>
+                    </HStack>
+                    <HStack
+                      $style={{
+                        alignItems: "center",
+                        gap: "16px",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <HStack $style={{ gap: "4px" }}>
                         <Stack
                           as="span"
                           $style={{
                             color: colors.textTertiary.toHex(),
                             fontSize: "13px",
                             lineHeight: "18px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
                           }}
                         >
-                          {description}
+                          Pricing:
                         </Stack>
-                      </VStack>
-                    </HStack>
-                    <HStack
-                      $style={{
-                        alignItems: "center",
-                        backgroundColor: colors.success.toRgba(0.05),
-                        borderRadius: "4px",
-                        gap: "4px",
-                        padding: "0 8px",
-                      }}
-                    >
-                      <Stack
-                        as="span"
-                        $style={{
-                          backgroundColor: colors.success.toHex(),
-                          borderRadius: "50%",
-                          height: "6px",
-                          width: "6px",
-                        }}
-                      />
-                      <Stack
-                        as="span"
-                        $style={{
-                          color: colors.success.toHex(),
-                          fontSize: "12px",
-                          lineHeight: "24px",
-                        }}
-                      >
-                        Live
-                      </Stack>
-                    </HStack>
-                  </HStack>
-                  <HStack
-                    $style={{
-                      alignItems: "center",
-                      gap: "16px",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <HStack $style={{ gap: "4px" }}>
+                        <Stack
+                          as="span"
+                          $style={{ fontSize: "13px", lineHeight: "18px" }}
+                        >
+                          Free
+                        </Stack>
+                      </HStack>
                       <Stack
                         as="span"
                         $style={{
                           color: colors.textTertiary.toHex(),
-                          fontSize: "13px",
-                          lineHeight: "18px",
+                          fontSize: "12px",
+                          lineHeight: "16px",
                         }}
                       >
-                        Pricing:
-                      </Stack>
-                      <Stack
-                        as="span"
-                        $style={{ fontSize: "13px", lineHeight: "18px" }}
-                      >
-                        {price}
+                        {dayjs(createdAt).format("MMM D, YYYY")}
                       </Stack>
                     </HStack>
-                    <Stack
-                      as="span"
-                      $style={{
-                        color: colors.textTertiary.toHex(),
-                        fontSize: "12px",
-                        lineHeight: "16px",
-                      }}
-                    >
-                      {dayjs(createdAt).format("MMM D, YYYY")}
-                    </Stack>
-                  </HStack>
-                </VStack>
-              ),
+                  </VStack>
+                );
+              },
             )}
           </VStack>
         </VStack>
