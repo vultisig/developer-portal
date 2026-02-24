@@ -13,7 +13,7 @@ import { PlusSmallIcon } from "@/icons/PlusSmallIcon";
 import { PuzzleIcon } from "@/icons/PuzzleIcon";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { routeTree } from "@/utils/routes";
-import { ListParams, Plugin } from "@/utils/types";
+import { Plugin } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
@@ -30,10 +30,10 @@ export const DashboardPage = () => {
   const { md, xl } = useResponsive();
   const colors = useTheme();
 
-  const fetchApps = useEffectEvent(async (params: ListParams) => {
+  const fetchApps = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
-    const plugins = await getPlugins(params);
+    const plugins = await getPlugins();
 
     setState((prev) => ({ ...prev, loading: false, plugins }));
   });
@@ -49,7 +49,7 @@ export const DashboardPage = () => {
   ];
 
   useEffect(() => {
-    fetchApps({});
+    fetchApps();
   }, []);
 
   return (

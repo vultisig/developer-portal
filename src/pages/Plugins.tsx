@@ -16,7 +16,7 @@ import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { match } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { ListParams, Plugin } from "@/utils/types";
+import { Plugin } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
@@ -203,16 +203,16 @@ export const PluginsPage = () => {
     },
   ];
 
-  const fetchApps = useEffectEvent(async (params: ListParams) => {
+  const fetchApps = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
-    const plugins = await getPlugins(params);
+    const plugins = await getPlugins();
 
     setState((prev) => ({ ...prev, loading: false, plugins }));
   });
 
   useEffect(() => {
-    fetchApps({});
+    fetchApps();
   }, []);
 
   const stats = [

@@ -185,7 +185,7 @@ export const PluginEarningsPage = () => {
     setState((prev) => ({ ...prev, plugin: undefined }));
 
     const plugin = await getPlugin(pluginId);
-    const earnings = await getEarnings({});
+    const earnings = await getEarnings({ pluginId });
 
     setState((prev) => ({ ...prev, earnings, plugin }));
   });

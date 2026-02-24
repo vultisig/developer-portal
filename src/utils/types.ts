@@ -37,11 +37,6 @@ export type JupiterToken = {
   name: string;
 };
 
-export type ListParams = {
-  skip?: number;
-  take?: number;
-};
-
 export type Plugin = {
   category: string;
   contactEmail: string;

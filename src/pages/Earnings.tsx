@@ -21,7 +21,7 @@ import {
   match,
   toValueFormat,
 } from "@/utils/functions";
-import { ListParams, Transaction } from "@/utils/types";
+import { Transaction } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
@@ -47,28 +47,15 @@ export const EarningsPage = () => {
     },
     {
       align: "center",
-      dataIndex: "type",
-      key: "type",
-      title: "Type",
-      render: (_, { type }) => {
+      dataIndex: "feeAsset",
+      key: "feeAsset",
+      title: "From",
+      render: (_, { feeAsset }) => {
         return (
           <HStack $style={{ justifyContent: "center" }}>
-            <Stack
-              as="span"
-              $style={{
-                alignItems: "center",
-                backgroundColor: colors.info.toRgba(0.05),
-                borderRadius: "4px",
-                color: colors.info.toHex(),
-                fontSize: "12px",
-                gap: "4px",
-                lineHeight: "24px",
-                padding: "0 8px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {kebabCaseToTitle(type).toUpperCase()}
-            </Stack>
+            <MiddleTruncate $style={{ width: "140px" }}>
+              {feeAsset.addr}
+            </MiddleTruncate>
           </HStack>
         );
       },
@@ -96,15 +83,28 @@ export const EarningsPage = () => {
     },
     {
       align: "center",
-      dataIndex: "feeAsset",
-      key: "feeAsset",
-      title: "From",
-      render: (_, { feeAsset }) => {
+      dataIndex: "type",
+      key: "type",
+      title: "Type",
+      render: (_, { type }) => {
         return (
           <HStack $style={{ justifyContent: "center" }}>
-            <MiddleTruncate $style={{ width: "140px" }}>
-              {feeAsset.addr}
-            </MiddleTruncate>
+            <Stack
+              as="span"
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.info.toRgba(0.05),
+                borderRadius: "4px",
+                color: colors.info.toHex(),
+                fontSize: "12px",
+                gap: "4px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {kebabCaseToTitle(type).toUpperCase()}
+            </Stack>
           </HStack>
         );
       },
@@ -186,16 +186,16 @@ export const EarningsPage = () => {
     },
   ];
 
-  const fetchEarnings = useEffectEvent(async (params: ListParams) => {
+  const fetchEarnings = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
-    const earnings = await getEarnings(params);
+    const earnings = await getEarnings({});
 
     setState((prev) => ({ ...prev, loading: false, earnings }));
   });
 
   useEffect(() => {
-    fetchEarnings({});
+    fetchEarnings();
   }, []);
 
   const stats = [

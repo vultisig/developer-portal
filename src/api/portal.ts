@@ -1,9 +1,8 @@
 import { jwtDecode } from "jwt-decode";
 
 import { apiClient } from "@/api/client";
-import { defaultPageSize } from "@/utils/constants";
 import { toSnakeCase } from "@/utils/functions";
-import { AuthToken, ListParams, Plugin, Transaction } from "@/utils/types";
+import { AuthToken, Plugin, Transaction } from "@/utils/types";
 
 export const createPlugin = async (plugin: Plugin): Promise<void> => {
   return apiClient.post("/plugin-proposals", toSnakeCase(plugin));
@@ -33,21 +32,17 @@ export const getPlugin = async (pluginId: string): Promise<Plugin> => {
   return apiClient.get<Plugin>(`/plugin-proposals/${pluginId}`);
 };
 
-export const getPlugins = async ({
-  skip = 0,
-  take = defaultPageSize,
-}: ListParams): Promise<Plugin[]> => {
-  return apiClient.get<Plugin[]>("/plugin-proposals", {
-    params: { skip, take },
-  });
+export const getPlugins = async (): Promise<Plugin[]> => {
+  return apiClient.get<Plugin[]>("/plugin-proposals");
 };
 
 export const getEarnings = async ({
-  skip = 0,
-  take = defaultPageSize,
-}: ListParams): Promise<Transaction[]> => {
+  pluginId,
+}: {
+  pluginId?: string;
+}): Promise<Transaction[]> => {
   return apiClient.get<Transaction[]>("/earnings", {
-    params: { skip, take },
+    params: { pluginId },
   });
 };
 
