@@ -40,7 +40,6 @@ export const PluginEarningsPage = () => {
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
   const colors = useTheme();
-  const logoUrl = plugin?.images.find(({ type }) => type === "logo")?.url;
 
   const columns: TableProps<Transaction>["columns"] = [
     {
@@ -233,11 +232,13 @@ export const PluginEarningsPage = () => {
         <HStack
           $style={{ alignItems: "center", gap: "12px", overflow: "hidden" }}
         >
-          <Stack
-            as="img"
-            src={logoUrl}
-            $style={{ borderRadius: "12px", height: "44px", width: "44px" }}
-          />
+          {plugin.logoUrl && (
+            <Stack
+              as="img"
+              src={plugin.logoUrl}
+              $style={{ borderRadius: "12px", height: "44px", width: "44px" }}
+            />
+          )}
           <Stack
             as="span"
             $style={{
@@ -250,61 +251,9 @@ export const PluginEarningsPage = () => {
           >
             {plugin.title}
           </Stack>
-          {match(plugin.status, {
-            active: () => (
-              <HStack
-                as="span"
-                $style={{
-                  alignItems: "center",
-                  backgroundColor: colors.success.toRgba(0.05),
-                  borderRadius: "4px",
-                  gap: "4px",
-                  padding: "0 8px",
-                }}
-              >
-                <Stack
-                  as="span"
-                  $style={{
-                    backgroundColor: colors.success.toHex(),
-                    borderRadius: "50%",
-                    height: "6px",
-                    width: "6px",
-                  }}
-                />
-                <Stack
-                  as="span"
-                  $style={{
-                    color: colors.success.toHex(),
-                    fontSize: "12px",
-                    lineHeight: "24px",
-                  }}
-                >
-                  Live
-                </Stack>
-              </HStack>
-            ),
-            submitted: () => (
-              <HStack
-                as="span"
-                $style={{
-                  alignItems: "center",
-                  backgroundColor: colors.warning.toRgba(0.05),
-                  borderRadius: "4px",
-                  color: colors.warning.toHex(),
-                  fontSize: "12px",
-                  gap: "4px",
-                  lineHeight: "24px",
-                  padding: "0 8px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                In Review
-              </HStack>
-            ),
-          })}
         </HStack>
         <Button
-          href={routeTree.pluginUpdate.link(plugin.pluginId)}
+          href={routeTree.pluginUpdate.link(plugin.id)}
           icon={<PencilLineIcon fontSize={16} />}
           state={true}
         >

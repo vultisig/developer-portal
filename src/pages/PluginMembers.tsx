@@ -21,7 +21,7 @@ import { modalHash } from "@/utils/constants";
 import { tinyId } from "@/utils/functions";
 import { User } from "@/utils/types";
 
-export const UsersPage = () => {
+export const PluginMembersPage = () => {
   const [user, setUser] = useState<User | undefined>(undefined);
   const { token } = antTheme.useToken();
   const { hash } = useLocation();

@@ -39,6 +39,19 @@ export type JupiterToken = {
 
 export type Plugin = {
   category: string;
+  createdAt: string;
+  description: string;
+  id: string;
+  logoUrl?: string;
+  publicKey?: string;
+  serverEndpoint: string;
+  thumbnailUrl?: string;
+  title: string;
+  updatedAt: string;
+};
+
+export type Proposal = {
+  category: string;
   contactEmail: string;
   createdAt: string;
   images: Image[];

@@ -12,7 +12,7 @@ import { ArrowBoxRightIcon } from "@/icons/ArrowBoxRightIcon";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { DotGridVerticalIcon } from "@/icons/DotGridVerticalIcon";
 import { MoonIcon } from "@/icons/MoonIcon";
-import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
+import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PuzzleIcon } from "@/icons/PuzzleIcon";
 import { SquareGridCircleIcon } from "@/icons/SquareGridCircleIcon";
 import { SunIcon } from "@/icons/SunIcon";
@@ -45,16 +45,16 @@ export const DefaultLayout = () => {
         path: routeTree.plugins.path,
       },
       {
+        icon: NewspaperIcon,
+        isActive: currentRoute === "proposals",
+        label: "Proposals",
+        path: routeTree.proposals.path,
+      },
+      {
         icon: DollarIcon,
         isActive: currentRoute === "earnings",
         label: "Earnings",
         path: routeTree.earnings.path,
-      },
-      {
-        icon: PeopleCopyIcon,
-        isActive: currentRoute === "users",
-        label: "Users",
-        path: routeTree.users.path,
       },
     ],
     [currentRoute],

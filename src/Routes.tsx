@@ -15,11 +15,12 @@ import { EarningsPage } from "@/pages/Earnings";
 import { InternalErrorPage } from "@/pages/InternalError";
 import { NotFoundPage } from "@/pages/NotFound";
 import { PluginEarningsPage } from "@/pages/PluginEarnings";
-import { PluginManagementPage } from "@/pages/PluginManagement";
+import { PluginMembersPage } from "@/pages/PluginMembers";
 import { PluginsPage } from "@/pages/Plugins";
 import { ProjectCategoriesPage } from "@/pages/ProjectCategories";
 import { ProjectManagementPage } from "@/pages/ProjectManagement";
-import { UsersPage } from "@/pages/Users";
+import { ProposalManagementPage } from "@/pages/ProposalManagement";
+import { ProposalsPage } from "@/pages/Proposals";
 import { RouteKey, routeTree } from "@/utils/routes";
 
 const SetCurrentRoute: FC<{ route: RouteKey; children: ReactNode }> = ({
@@ -65,20 +66,24 @@ export const Routes = () => {
           element: setCurrentRoute("plugins", <PluginsPage />),
         },
         {
-          path: routeTree.pluginCreate.path,
-          element: setCurrentRoute("pluginCreate", <PluginManagementPage />),
-        },
-        {
-          path: routeTree.pluginUpdate.path,
-          element: setCurrentRoute("pluginUpdate", <PluginManagementPage />),
-        },
-        {
           path: routeTree.pluginEarnings.path,
-          element: setCurrentRoute("pluginEarnings", <PluginEarningsPage />),
+          element: setCurrentRoute("plugins", <PluginEarningsPage />),
         },
         {
-          path: routeTree.users.path,
-          element: setCurrentRoute("users", <UsersPage />),
+          path: routeTree.pluginMembers.path,
+          element: setCurrentRoute("plugins", <PluginMembersPage />),
+        },
+        {
+          path: routeTree.proposals.path,
+          element: setCurrentRoute("proposals", <ProposalsPage />),
+        },
+        {
+          path: routeTree.proposalCreate.path,
+          element: setCurrentRoute("proposals", <ProposalManagementPage />),
+        },
+        {
+          path: routeTree.proposalUpdate.path,
+          element: setCurrentRoute("proposals", <ProposalManagementPage />),
         },
       ],
       errorElement: <InternalErrorPage />,

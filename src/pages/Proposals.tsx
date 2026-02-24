@@ -9,12 +9,11 @@ import { DateView } from "@/components/DateView";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { LiveFullIcon } from "@/icons/LiveFullIcon";
 import { LoaderIcon } from "@/icons/LoaderIcon";
-import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
-import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
 import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { match } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
 import { Plugin, Proposal } from "@/utils/types";
 
@@ -24,7 +23,7 @@ type StateProps = {
   proposals: Proposal[];
 };
 
-export const PluginsPage = () => {
+export const ProposalsPage = () => {
   const [state, setState] = useState<StateProps>({
     loading: true,
     plugins: [],
@@ -35,13 +34,15 @@ export const PluginsPage = () => {
   const { md } = useResponsive();
   const colors = useTheme();
 
-  const columns: TableProps<Plugin>["columns"] = [
+  const columns: TableProps<Proposal>["columns"] = [
     {
       dataIndex: "title",
       key: "title",
       title: "Title",
-      render: (_, { logoUrl, title }) => {
-        return logoUrl ? (
+      render: (_, { images, title }) => {
+        const logoUrl = images.find(({ type }) => type === "logo")?.url;
+
+        return (
           <HStack $style={{ alignItems: "center", gap: "12px" }}>
             <Stack
               as="img"
@@ -50,8 +51,6 @@ export const PluginsPage = () => {
             />
             <Stack as="span">{title}</Stack>
           </HStack>
-        ) : (
-          title
         );
       },
     },
@@ -96,20 +95,84 @@ export const PluginsPage = () => {
       dataIndex: "createdAt",
       key: "createdAt",
       title: "Created At",
-      render: (_, { createdAt }) => <DateView date={createdAt} />,
+      render: (_, { createdAt }) => {
+        return <DateView date={createdAt} />;
+      },
     },
     {
       align: "center",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "status",
+      key: "status",
+      title: "Status",
+      render: (_, { status }) => (
+        <HStack $style={{ justifyContent: "center" }}>
+          {match(status, {
+            active: () => (
+              <HStack
+                as="span"
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.success.toRgba(0.05),
+                  borderRadius: "4px",
+                  gap: "4px",
+                  padding: "0 8px",
+                }}
+              >
+                <Stack
+                  as="span"
+                  $style={{
+                    backgroundColor: colors.success.toHex(),
+                    borderRadius: "50%",
+                    height: "6px",
+                    width: "6px",
+                  }}
+                />
+                <Stack
+                  as="span"
+                  $style={{
+                    color: colors.success.toHex(),
+                    fontSize: "12px",
+                    lineHeight: "24px",
+                  }}
+                >
+                  Live
+                </Stack>
+              </HStack>
+            ),
+            submitted: () => (
+              <HStack
+                as="span"
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.warning.toRgba(0.05),
+                  borderRadius: "4px",
+                  color: colors.warning.toHex(),
+                  fontSize: "12px",
+                  gap: "4px",
+                  lineHeight: "24px",
+                  padding: "0 8px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                In Review
+              </HStack>
+            ),
+          })}
+        </HStack>
+      ),
+    },
+    {
+      align: "center",
+      dataIndex: "pluginId",
+      key: "pluginId",
       title: "Action",
-      width: 170,
-      render: (_, { id }) => (
+      width: 124,
+      render: (_, { pluginId }) => (
         <HStack $style={{ gap: "8px", justifyContent: "center" }}>
           <Tooltip title="Update">
             <HStack
               as={Link}
-              to={routeTree.pluginUpdate.link(id)}
+              to={routeTree.proposalUpdate.link(pluginId)}
               state={true}
               $style={{
                 backgroundColor: `${colors.bgTertiary.toHex()}`,
@@ -121,10 +184,10 @@ export const PluginsPage = () => {
               <PencilLineIcon fontSize={16} />
             </HStack>
           </Tooltip>
-          <Tooltip title="Earnings">
+          {/* <Tooltip title="Transactions">
             <HStack
               as={Link}
-              to={routeTree.pluginEarnings.link(id)}
+              to={routeTree.pluginEarnings.link(pluginId)}
               state={true}
               $style={{
                 backgroundColor: `${colors.bgTertiary.toHex()}`,
@@ -135,22 +198,7 @@ export const PluginsPage = () => {
             >
               <NewspaperIcon fontSize={16} />
             </HStack>
-          </Tooltip>
-          <Tooltip title="Members">
-            <HStack
-              as={Link}
-              to={routeTree.pluginMembers.link(id)}
-              state={true}
-              $style={{
-                backgroundColor: `${colors.bgTertiary.toHex()}`,
-                borderRadius: "50%",
-                padding: "12px",
-              }}
-              $hover={{ color: colors.info.toHex() }}
-            >
-              <PeopleCopyIcon fontSize={16} />
-            </HStack>
-          </Tooltip>
+          </Tooltip> */}
         </HStack>
       ),
     },
@@ -202,7 +250,7 @@ export const PluginsPage = () => {
       <HStack $style={{ justifyContent: "space-between" }}>
         <VStack $style={{ gap: "2px" }}>
           <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
-            Your Live Plugins
+            Your In Review Plugins
           </Stack>
           <Stack
             as="span"
@@ -264,11 +312,11 @@ export const PluginsPage = () => {
           </HStack>
         ))}
       </Stack>
-      <Table<Plugin>
+      <Table<Proposal>
         columns={columns}
-        dataSource={plugins}
+        dataSource={proposals}
         loading={loading}
-        rowKey="id"
+        rowKey="pluginId"
       />
     </VStack>
   );

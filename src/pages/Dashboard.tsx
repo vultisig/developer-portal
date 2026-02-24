@@ -11,6 +11,7 @@ import { InboxEmptyIcon } from "@/icons/InboxEmptyIcon";
 import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
 import { PlusSmallIcon } from "@/icons/PlusSmallIcon";
 import { PuzzleIcon } from "@/icons/PuzzleIcon";
+import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { routeTree } from "@/utils/routes";
 import { Plugin } from "@/utils/types";
@@ -25,18 +26,22 @@ export const DashboardPage = () => {
     loading: true,
     plugins: [],
   });
-  const { plugins } = state;
+  const { loading, plugins } = state;
   const { token } = antTheme.useToken();
   const { md, xl } = useResponsive();
   const colors = useTheme();
 
-  const fetchApps = useEffectEvent(async () => {
+  const fetchPlugins = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
     const plugins = await getPlugins();
 
     setState((prev) => ({ ...prev, loading: false, plugins }));
   });
+
+  useEffect(() => {
+    fetchPlugins();
+  }, []);
 
   const items = [
     { icon: <DollarIcon />, title: "Total Revenue", value: "$2.3k" },
@@ -47,10 +52,6 @@ export const DashboardPage = () => {
       value: String(plugins.length),
     },
   ];
-
-  useEffect(() => {
-    fetchApps();
-  }, []);
 
   return (
     <VStack
@@ -138,7 +139,7 @@ export const DashboardPage = () => {
         ))}
         <VStack
           as={Link}
-          to={routeTree.pluginCreate.path}
+          to={routeTree.proposalCreate.path}
           state={true}
           $style={{
             alignItems: "center",
@@ -229,20 +230,13 @@ export const DashboardPage = () => {
             </Stack>
           </HStack>
           <VStack $style={{ gap: "12px" }}>
-            {plugins.map(
-              ({
-                category,
-                createdAt,
-                shortDescription,
-                pluginId,
-                images,
-                title,
-              }) => {
-                const logoUrl = images.find(({ type }) => type === "logo")?.url;
-
-                return (
+            {loading ? (
+              <Spin centered />
+            ) : (
+              plugins.map(
+                ({ category, createdAt, description, id, logoUrl, title }) => (
                   <VStack
-                    key={pluginId}
+                    key={id}
                     $style={{
                       backgroundColor: colors.bgSecondary.toHex(),
                       borderColor: colors.borderLight.toHex(),
@@ -314,7 +308,7 @@ export const DashboardPage = () => {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {shortDescription}
+                            {description}
                           </Stack>
                         </VStack>
                       </HStack>
@@ -385,8 +379,8 @@ export const DashboardPage = () => {
                       </Stack>
                     </HStack>
                   </VStack>
-                );
-              },
+                ),
+              )
             )}
           </VStack>
         </VStack>

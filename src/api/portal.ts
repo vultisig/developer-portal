@@ -2,10 +2,10 @@ import { jwtDecode } from "jwt-decode";
 
 import { apiClient } from "@/api/client";
 import { toSnakeCase } from "@/utils/functions";
-import { AuthToken, Plugin, Transaction } from "@/utils/types";
+import { AuthToken, Plugin, Proposal, Transaction } from "@/utils/types";
 
-export const createPlugin = async (plugin: Plugin): Promise<void> => {
-  return apiClient.post("/plugin-proposals", toSnakeCase(plugin));
+export const createProposal = async (proposal: Proposal): Promise<void> => {
+  return apiClient.post("/plugin-proposals", toSnakeCase(proposal));
 };
 
 export const delAuthToken = async (token: string): Promise<void> => {
@@ -29,11 +29,19 @@ export const getAuthToken = async (data: {
 };
 
 export const getPlugin = async (pluginId: string): Promise<Plugin> => {
-  return apiClient.get<Plugin>(`/plugin-proposals/${pluginId}`);
+  return apiClient.get<Plugin>(`/plugins/${pluginId}`);
 };
 
 export const getPlugins = async (): Promise<Plugin[]> => {
-  return apiClient.get<Plugin[]>("/plugin-proposals");
+  return apiClient.get<Plugin[]>("/plugins");
+};
+
+export const getProposal = async (pluginId: string): Promise<Proposal> => {
+  return apiClient.get<Proposal>(`/plugin-proposals/${pluginId}`);
+};
+
+export const getProposals = async (): Promise<Proposal[]> => {
+  return apiClient.get<Proposal[]>("/plugin-proposals");
 };
 
 export const getEarnings = async ({

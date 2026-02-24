@@ -13,7 +13,7 @@ import { FC, Fragment, useEffect, useEffectEvent, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { createPlugin, getPlugin, validatePluginId } from "@/api/portal";
+import { createProposal, getProposal, validatePluginId } from "@/api/portal";
 import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
 import { CrossLargeIcon } from "@/icons/CrossLargeIcon";
 import { EmailTwoIcon } from "@/icons/EmailTwoIcon";
@@ -29,10 +29,10 @@ import {
   tinyId,
   urlToBase64,
 } from "@/utils/functions";
-import { Image, ImageMime, Plugin } from "@/utils/types";
+import { Image, ImageMime, Proposal } from "@/utils/types";
 
 type StateProps = {
-  plugin?: Plugin;
+  proposal?: Proposal;
   loaded?: boolean;
   step: number;
 };
@@ -44,16 +44,16 @@ const steps = [
   "Contact Info",
 ] as const;
 
-export const PluginManagementPage = () => {
+export const ProposalManagementPage = () => {
   const [state, setState] = useState<StateProps>({ step: 1 });
-  const { loaded, step, plugin } = state;
+  const { loaded, step, proposal } = state;
   const { token } = antTheme.useToken();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
-  const [form] = Form.useForm<Plugin>();
+  const [form] = Form.useForm<Proposal>();
   const colors = useTheme();
 
-  const handleFinish: FormProps<Plugin>["onFinish"] = ({
+  const handleFinish: FormProps<Proposal>["onFinish"] = ({
     logo,
     media = [],
     thumbnail,
@@ -103,15 +103,15 @@ export const PluginManagementPage = () => {
       values.category = "app";
       values.images = images as Image[];
 
-      createPlugin(values);
+      createProposal(values);
     }
   };
 
-  const handlePluginChange = useEffectEvent(async (pluginId: string) => {
+  const handleProposalChange = useEffectEvent(async (pluginId: string) => {
     if (pluginId) {
       setState((prev) => ({ ...prev, loaded: false }));
 
-      const { images, ...plugin } = await getPlugin(pluginId);
+      const { images, ...plugin } = await getProposal(pluginId);
 
       setState((prev) => ({ ...prev, loaded: true }));
 
@@ -128,7 +128,7 @@ export const PluginManagementPage = () => {
   });
 
   useEffect(() => {
-    handlePluginChange(pluginId);
+    handleProposalChange(pluginId);
   }, [pluginId]);
 
   if (!loaded) return <Spin centered />;
@@ -152,7 +152,7 @@ export const PluginManagementPage = () => {
               textAlign: "center",
             }}
           >
-            {!plugin ? "Register a New Plugin" : `Edit ${plugin.title} Plugin`}
+            {!proposal ? "Register a New Plugin" : `Edit ${proposal.title} Plugin`}
           </Stack>
           <Stack
             as="span"
@@ -260,7 +260,7 @@ export const PluginManagementPage = () => {
               requiredMark={false}
             >
               <Stack $style={{ display: step === 1 ? "block" : "none" }}>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   name="logo"
                   rules={[
                     {
@@ -271,7 +271,7 @@ export const PluginManagementPage = () => {
                 >
                   <UploadLogo />
                 </Form.Item>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   name="thumbnail"
                   rules={[
                     {
@@ -282,7 +282,7 @@ export const PluginManagementPage = () => {
                 >
                   <UploadThumbnail />
                 </Form.Item>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   label="Plugin Name"
                   name="title"
                   rules={[
@@ -294,7 +294,7 @@ export const PluginManagementPage = () => {
                 >
                   <Input placeholder="e.g., DCA Plugin" />
                 </Form.Item>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   extra="lowercase, kebab-case"
                   label="Plugin ID"
                   name="pluginId"
@@ -327,7 +327,7 @@ export const PluginManagementPage = () => {
                 >
                   <Input placeholder="e.g., vultisig-dca-1000" />
                 </Form.Item>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   label="Short Description"
                   name="shortDescription"
                   rules={[
@@ -339,12 +339,12 @@ export const PluginManagementPage = () => {
                 >
                   <Input.TextArea placeholder="Briefly describe your plugin does" />
                 </Form.Item>
-                <Form.Item<Plugin> label="Description Images" name="media">
+                <Form.Item<Proposal> label="Description Images" name="media">
                   <UploadMedia />
                 </Form.Item>
               </Stack>
               <Stack $style={{ display: step === 2 ? "block" : "none" }}>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   label="Server Endpoint"
                   name="serverEndpoint"
                   rules={[
@@ -356,7 +356,7 @@ export const PluginManagementPage = () => {
                 >
                   <Input placeholder="https://your-plugin.example.com" />
                 </Form.Item>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   label="Supported Blockchains"
                   name="supportedChains"
                   rules={[
@@ -377,7 +377,7 @@ export const PluginManagementPage = () => {
                 </Form.Item>
               </Stack>
               <Stack $style={{ display: step === 3 ? "block" : "none" }}>
-                <Form.Item<Plugin>
+                <Form.Item<Proposal>
                   label="Contact Email"
                   name="contactEmail"
                   rules={[
@@ -393,7 +393,7 @@ export const PluginManagementPage = () => {
                 >
                   <Input placeholder="https://your-plugin.example.com" />
                 </Form.Item>
-                <Form.Item<Plugin> label="Optional notes" name="notes">
+                <Form.Item<Proposal> label="Optional notes" name="notes">
                   <Input.TextArea placeholder="Any additional information or questions" />
                 </Form.Item>
               </Stack>

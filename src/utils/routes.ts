@@ -5,7 +5,11 @@ export type RouteKey =
   | "plugins"
   | "pluginCreate"
   | "pluginEarnings"
+  | "pluginMembers"
   | "pluginUpdate"
+  | "proposals"
+  | "proposalCreate"
+  | "proposalUpdate"
   | "projectCategories"
   | "projectManagement"
   | "root"
@@ -21,6 +25,10 @@ export const routeTree = {
     path: "/plugins/:pluginId/earnings",
     link: (pluginId: string) => `/plugins/${pluginId}/earnings`,
   },
+  pluginMembers: {
+    path: "/plugins/:pluginId/members",
+    link: (pluginId: string) => `/plugins/${pluginId}/members`,
+  },
   pluginUpdate: {
     path: "/plugins/:pluginId",
     link: (pluginId: string) => `/plugins/${pluginId}`,
@@ -32,6 +40,12 @@ export const routeTree = {
   projectManagement: {
     path: `/account/projects/:projectId`,
     link: (projectId: string) => `/account/projects/${projectId}`,
+  },
+  proposals: { path: "/proposals" },
+  proposalCreate: { path: "/proposals/create" },
+  proposalUpdate: {
+    path: "/proposals/:pluginId",
+    link: (pluginId: string) => `/proposals/${pluginId}`,
   },
   root: { path: "/" },
   users: { path: "/users" },
