@@ -78,6 +78,15 @@ export type Token = {
   ticker: string;
 };
 
+export type Member = {
+  addedBy?: string;
+  addedVia: string;
+  createdAt: string;
+  isCurrentUser: boolean;
+  publicKey: string;
+  role: "admin" | "editor" | "staff" | "viewer";
+};
+
 export type Transaction = {
   amount: string;
   createdAt: string;
@@ -94,14 +103,6 @@ export type Transaction = {
   status: "pending" | "completed" | "failed";
   txHash: string;
   type: "per-tx" | "once" | "recurring";
-};
-
-export type User = {
-  email: string;
-  id: string;
-  name: string;
-  role: "owner" | "admin" | "developer";
-  status: "active" | "invited";
 };
 
 export type Vault = {

@@ -112,7 +112,7 @@ export const PluginsPage = () => {
               to={routeTree.pluginUpdate.link(id)}
               state={true}
               $style={{
-                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                backgroundColor: colors.bgTertiary.toHex(),
                 borderRadius: "50%",
                 padding: "12px",
               }}
@@ -127,7 +127,7 @@ export const PluginsPage = () => {
               to={routeTree.pluginEarnings.link(id)}
               state={true}
               $style={{
-                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                backgroundColor: colors.bgTertiary.toHex(),
                 borderRadius: "50%",
                 padding: "12px",
               }}
@@ -142,7 +142,7 @@ export const PluginsPage = () => {
               to={routeTree.pluginMembers.link(id)}
               state={true}
               $style={{
-                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                backgroundColor: colors.bgTertiary.toHex(),
                 borderRadius: "50%",
                 padding: "12px",
               }}

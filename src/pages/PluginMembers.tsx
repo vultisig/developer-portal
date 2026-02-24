@@ -1,6 +1,5 @@
 import {
   Form,
-  Input,
   Modal,
   Select,
   Table,
@@ -8,54 +7,69 @@ import {
   theme as antTheme,
 } from "antd";
 import { useResponsive } from "antd-style";
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useEffectEvent, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { getMembers } from "@/api/portal";
+import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useGoBack } from "@/hooks/useGoBack";
-import { PencilLineIcon } from "@/icons/PencilLineIcon";
 import { PeopleAddIcon } from "@/icons/PeopleAddIcon";
+import { TrashCanIcon } from "@/icons/TrashCanIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
-import { tinyId } from "@/utils/functions";
-import { User } from "@/utils/types";
+import { camelCaseToTitle, snakeCaseToTitle } from "@/utils/functions";
+import { Member } from "@/utils/types";
+
+type StateProps = {
+  loading: boolean;
+  member?: Member;
+  members: Member[];
+};
 
 export const PluginMembersPage = () => {
-  const [user, setUser] = useState<User | undefined>(undefined);
+  const [state, setState] = useState<StateProps>({
+    loading: true,
+    members: [],
+  });
+  const { loading, member, members } = state;
   const { token } = antTheme.useToken();
   const { hash } = useLocation();
+  const { pluginId = "" } = useParams();
   const { md } = useResponsive();
-  const [form] = Form.useForm<User>();
+  const [form] = Form.useForm<Member>();
   const goBack = useGoBack();
   const navigate = useNavigate();
   const colors = useTheme();
   const open = hash === modalHash.form;
 
-  const columns: TableProps<User>["columns"] = [
+  const columns: TableProps<Member>["columns"] = [
     {
-      dataIndex: "name",
-      key: "name",
-      title: "Name",
-      render: (value) => value || "-",
-    },
-    {
-      align: "center",
-      dataIndex: "email",
-      key: "email",
-      title: "Email",
+      dataIndex: "addedVia",
+      key: "addedVia",
+      title: "Added Via",
+      render: (_, { addedVia }) => snakeCaseToTitle(addedVia),
     },
     {
       align: "center",
       dataIndex: "role",
       key: "role",
       title: "Role",
+      render: (_, { role }) => camelCaseToTitle(role),
     },
     {
       align: "center",
-      dataIndex: "status",
-      key: "status",
-      title: "Status",
+      dataIndex: "publicKey",
+      key: "publicKey",
+      title: "Address",
+      render: (_, { publicKey }) => (
+        <HStack $style={{ justifyContent: "center" }}>
+          <MiddleTruncate $style={{ width: "140px" }}>
+            {publicKey}
+          </MiddleTruncate>
+        </HStack>
+      ),
     },
     {
       align: "center",
@@ -63,53 +77,48 @@ export const PluginMembersPage = () => {
       key: "id",
       title: "Action",
       width: 100,
-      render: (_, user) => (
+      render: (_, member) => (
         <HStack $style={{ justifyContent: "center" }}>
-          <Stack
-            as={Button}
-            disabled={user.role === "owner"}
-            icon={<PencilLineIcon fontSize={16} />}
-            onClick={() => {
-              setUser(user);
-              navigate(modalHash.form, { state: true });
-            }}
-            $style={{
-              backgroundColor: `${colors.bgTertiary.toHex()} !important`,
-              padding: "12px",
-            }}
-            ghost
-          />
+          {member.role === "admin" && (
+            <HStack
+              as="span"
+              $style={{
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "50%",
+                cursor: "pointer",
+                padding: "12px",
+              }}
+              $hover={{ color: colors.error.toHex() }}
+            >
+              <TrashCanIcon fontSize={16} />
+            </HStack>
+          )}
         </HStack>
       ),
     },
   ];
 
-  const data: User[] = [
-    {
-      id: tinyId(),
-      name: "John Doe",
-      email: "john.doe@example.com",
-      role: "owner",
-      status: "active",
-    },
-    {
-      id: tinyId(),
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "admin",
-      status: "invited",
-    },
-  ];
+  const handlePluginChange = useEffectEvent(async () => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    const members = await getMembers(pluginId);
+
+    setState((prev) => ({ ...prev, loading: false, members }));
+  });
+
+  useEffect(() => {
+    handlePluginChange();
+  }, [pluginId]);
 
   useEffect(() => {
     if (!open) return;
 
     form.resetFields();
 
-    if (!user) return;
+    if (!member) return;
 
-    form.setFieldsValue(user);
-  }, [form, open, user]);
+    form.setFieldsValue(member);
+  }, [form, member, open]);
 
   return (
     <>
@@ -145,42 +154,30 @@ export const PluginMembersPage = () => {
             {md && "Invite Member"}
           </Button>
         </HStack>
-        <Table columns={columns} dataSource={data} rowKey="id" />
+        <Table
+          columns={columns}
+          dataSource={members}
+          loading={loading}
+          rowKey="id"
+        />
       </VStack>
 
       <Modal
         footer={
           <Button onClick={() => form.submit()}>
-            {user ? "Save Info" : "Send Invite"}
+            {member ? "Save Info" : "Send Invite"}
           </Button>
         }
         mask={{ closable: false }}
         onCancel={() => {
-          setUser(undefined);
+          setState((prev) => ({ ...prev, member: undefined }));
           goBack();
         }}
         open={open}
-        title={user ? "Edit a team member" : "Invite a team member"}
+        title={member ? "Edit a team member" : "Invite a team member"}
       >
         <Form form={form} layout="vertical" requiredMark={false}>
-          <Form.Item<User>
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: "Please enter the name" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item<User>
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: "Please enter the email" },
-              { type: "email", message: "Please enter a valid email" },
-            ]}
-          >
-            <Input placeholder="email@example.com" />
-          </Form.Item>
-          <Form.Item<User>
+          <Form.Item<Member>
             label="Role"
             name="role"
             rules={[{ required: true, message: "Please select the role" }]}

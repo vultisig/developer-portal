@@ -2,7 +2,13 @@ import { jwtDecode } from "jwt-decode";
 
 import { apiClient } from "@/api/client";
 import { toSnakeCase } from "@/utils/functions";
-import { AuthToken, Plugin, Proposal, Transaction } from "@/utils/types";
+import {
+  AuthToken,
+  Member,
+  Plugin,
+  Proposal,
+  Transaction,
+} from "@/utils/types";
 
 export const createProposal = async (proposal: Proposal): Promise<void> => {
   return apiClient.post("/plugin-proposals", toSnakeCase(proposal));
@@ -12,6 +18,17 @@ export const delAuthToken = async (token: string): Promise<void> => {
   const { token_id } = jwtDecode<{ token_id: string }>(token);
 
   return apiClient.del(`/auth/tokens/${token_id}`);
+};
+
+export const delMember = async (
+  pluginId: string,
+  address: string,
+): Promise<string> => {
+  const { message } = await apiClient.del<{ message: string }>(
+    `/plugins/${pluginId}/team/${encodeURIComponent(address)}`,
+  );
+
+  return message;
 };
 
 export const getAuthToken = async (data: {
@@ -52,6 +69,10 @@ export const getEarnings = async ({
   return apiClient.get<Transaction[]>("/earnings", {
     params: { pluginId },
   });
+};
+
+export const getMembers = async (pluginId: string): Promise<Member[]> => {
+  return apiClient.get<Member[]>(`/plugins/${pluginId}/team`);
 };
 
 export const validatePluginId = async (pluginId: string): Promise<boolean> => {

@@ -175,7 +175,7 @@ export const ProposalsPage = () => {
               to={routeTree.proposalUpdate.link(pluginId)}
               state={true}
               $style={{
-                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                backgroundColor: colors.bgTertiary.toHex(),
                 borderRadius: "50%",
                 padding: "12px",
               }}
@@ -190,7 +190,7 @@ export const ProposalsPage = () => {
               to={routeTree.pluginEarnings.link(pluginId)}
               state={true}
               $style={{
-                backgroundColor: `${colors.bgTertiary.toHex()}`,
+                backgroundColor: colors.bgTertiary.toHex(),
                 borderRadius: "50%",
                 padding: "12px",
               }}

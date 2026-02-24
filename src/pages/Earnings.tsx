@@ -171,7 +171,7 @@ export const EarningsPage = () => {
                 to={explorerUrl}
                 target="_blank"
                 $style={{
-                  backgroundColor: `${colors.bgTertiary.toHex()}`,
+                  backgroundColor: colors.bgTertiary.toHex(),
                   borderRadius: "50%",
                   padding: "12px",
                 }}
