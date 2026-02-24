@@ -1,16 +1,202 @@
-import { theme as antTheme } from "antd";
+import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
 import { useResponsive } from "antd-style";
+import { Decimal } from "decimal.js";
+import { useEffect, useEffectEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
+import { getEarnings } from "@/api/portal";
+import { DateView } from "@/components/DateView";
+import { MiddleTruncate } from "@/components/MiddleTruncate";
+import { useCore } from "@/hooks/useCore";
 import { CoinsAddIcon } from "@/icons/CoinsAddIcon";
 import { LineChartOneIcon } from "@/icons/LineChartOneIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
+import { SquareArrowOutTopLeftIcon } from "@/icons/SquareArrowOutTopLeftIcon";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import {
+  camelCaseToTitle,
+  getExplorerUrl,
+  kebabCaseToTitle,
+  match,
+  toValueFormat,
+} from "@/utils/functions";
+import { ListParams, Transaction } from "@/utils/types";
+
+type StateProps = {
+  loading: boolean;
+  earnings: Transaction[];
+};
 
 export const EarningsPage = () => {
+  const [state, setState] = useState<StateProps>({
+    loading: true,
+    earnings: [],
+  });
+  const { earnings } = state;
   const { token } = antTheme.useToken();
+  const { baseValue, currency } = useCore();
   const { md } = useResponsive();
   const colors = useTheme();
+
+  const columns: TableProps<Transaction>["columns"] = [
+    {
+      dataIndex: "pluginName",
+      key: "pluginName",
+      title: "Plugin",
+    },
+    {
+      align: "center",
+      dataIndex: "type",
+      key: "type",
+      title: "Type",
+      render: (_, { type }) => {
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <Stack
+              as="span"
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.info.toRgba(0.05),
+                borderRadius: "4px",
+                color: colors.info.toHex(),
+                fontSize: "12px",
+                gap: "4px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {kebabCaseToTitle(type).toUpperCase()}
+            </Stack>
+          </HStack>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "amount",
+      key: "amount",
+      title: "Amount",
+      render: (_, { amount, feeAsset }) => {
+        return (
+          <Stack
+            as="span"
+            $style={{ color: colors.success.toHex() }}
+          >{`${toValueFormat(
+            new Decimal(amount)
+              .mul(new Decimal(baseValue))
+              .div(new Decimal(10).pow(feeAsset.decimals))
+              .toString(),
+            currency,
+            feeAsset.decimals,
+          )} ${feeAsset.symbol}`}</Stack>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "feeAsset",
+      key: "feeAsset",
+      title: "From",
+      render: (_, { feeAsset }) => {
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <MiddleTruncate $style={{ width: "140px" }}>
+              {feeAsset.addr}
+            </MiddleTruncate>
+          </HStack>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      title: "Created At",
+      render: (_, { createdAt }) => {
+        return <DateView date={createdAt} />;
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "statusOnchain",
+      key: "statusOnchain",
+      title: "Status",
+      render: (_, { status }) => {
+        const color = match(status, {
+          failed: () => colors.error,
+          pending: () => colors.warning,
+          completed: () => colors.success,
+        });
+
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <Stack
+              as="span"
+              $style={{
+                alignItems: "center",
+                backgroundColor: color.toRgba(0.05),
+                borderRadius: "4px",
+                color: color.toHex(),
+                fontSize: "12px",
+                gap: "4px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {camelCaseToTitle(status)}
+            </Stack>
+          </HStack>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "txHash",
+      key: "txHash",
+      title: "Action",
+      width: 100,
+      render: (_, { txHash, feeAsset }) => {
+        if (!txHash) return null;
+
+        const explorerUrl = getExplorerUrl(feeAsset.network, "tx", txHash);
+
+        return (
+          <HStack $style={{ gap: "8px", justifyContent: "center" }}>
+            <Tooltip title="Details">
+              <HStack
+                as={Link}
+                to={explorerUrl}
+                target="_blank"
+                $style={{
+                  backgroundColor: `${colors.bgTertiary.toHex()}`,
+                  borderRadius: "50%",
+                  padding: "12px",
+                }}
+                $hover={{ color: colors.info.toHex() }}
+              >
+                <SquareArrowOutTopLeftIcon fontSize={16} />
+              </HStack>
+            </Tooltip>
+          </HStack>
+        );
+      },
+    },
+  ];
+
+  const fetchEarnings = useEffectEvent(async (params: ListParams) => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    const earnings = await getEarnings(params);
+
+    setState((prev) => ({ ...prev, loading: false, earnings }));
+  });
+
+  useEffect(() => {
+    fetchEarnings({});
+  }, []);
 
   const stats = [
     {
@@ -116,6 +302,23 @@ export const EarningsPage = () => {
           </HStack>
         ))}
       </Stack>
+      <HStack
+        $style={{ alignItems: "center", justifyContent: "space-between" }}
+      >
+        <Stack
+          as="span"
+          $style={{
+            fontSize: "22px",
+            lineHeight: "24px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Transactions
+        </Stack>
+      </HStack>
+      <Table<Transaction> columns={columns} dataSource={earnings} rowKey="id" />
     </VStack>
   );
 };

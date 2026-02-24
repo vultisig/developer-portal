@@ -85,7 +85,7 @@ export const VStack = styled.div<StackProps>`
     })}
 `;
 
-type StackProps = DefaultProps & {
+export type StackProps = DefaultProps & {
   $media?: { lg?: DefaultProps; md?: DefaultProps; xl?: DefaultProps };
 };
 

@@ -1,10 +1,12 @@
-import { List, Modal } from "antd";
+import { Modal } from "antd";
+import { Fragment } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { useCore } from "@/hooks/useCore";
 import { useGoBack } from "@/hooks/useGoBack";
-import { Stack } from "@/toolkits/Stack";
+import { Divider } from "@/toolkits/Divider";
+import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { modalHash } from "@/utils/constants";
 import { currencies, Currency, currencySymbols } from "@/utils/currency";
 
@@ -31,34 +33,30 @@ export const CurrencyModal = () => {
       title="Change Currency"
       width={360}
     >
-      <List
-        dataSource={currencies.map((key) => ({
-          key,
-          title: currencySymbols[key],
-        }))}
-        renderItem={({ key, title }) => {
-          const isActive = key === currency;
-
-          return (
-            <Stack
-              as={List.Item}
+      <VStack $style={{ gap: "8px" }}>
+        {currencies.map((key, ind) => (
+          <Fragment key={key}>
+            {ind > 0 && <Divider light />}
+            <HStack
               key={key}
               onClick={() => handleSelect(key)}
-              {...(isActive
-                ? {
-                    $style: { color: `${colors.success.toHex()} !important` },
-                  }
-                : {
-                    $hover: { color: colors.buttonPrimary.toHex() },
-                    $style: { cursor: "pointer" },
-                  })}
+              $style={{
+                alignItems: "center",
+                cursor: "pointer",
+                justifyContent: "space-between",
+                lineHeight: "32px",
+                ...(key === currency
+                  ? { color: colors.accentFour.toHex() }
+                  : {}),
+              }}
+              $hover={{ color: colors.accentFour.toHex() }}
             >
-              <span>{title}</span>
-              <span>{key.toUpperCase()}</span>
-            </Stack>
-          );
-        }}
-      />
+              <Stack as="span">{currencySymbols[key]}</Stack>
+              <Stack as="span">{key.toUpperCase()}</Stack>
+            </HStack>
+          </Fragment>
+        ))}
+      </VStack>
     </Modal>
   );
 };

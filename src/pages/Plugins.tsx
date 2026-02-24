@@ -186,7 +186,7 @@ export const PluginsPage = () => {
           <Tooltip title="Transactions">
             <HStack
               as={Link}
-              to={routeTree.pluginTransactions.link(pluginId)}
+              to={routeTree.pluginEarnings.link(pluginId)}
               state={true}
               $style={{
                 backgroundColor: `${colors.bgTertiary.toHex()}`,

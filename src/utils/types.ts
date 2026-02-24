@@ -71,22 +71,21 @@ export type Token = {
 };
 
 export type Transaction = {
-  amount?: string;
-  appName: string;
-  broadcastedAt: string;
-  chain: Chain;
+  amount: string;
   createdAt: string;
-  errorMessage?: string;
+  feeAsset: {
+    addr: string;
+    decimals: number;
+    network: Chain;
+    symbol: string;
+  };
+  fromAddress: string;
   id: string;
   pluginId: string;
-  policyId: string;
-  publicKey: string;
-  status: "PROPOSED" | "SIGNED" | "VERIFIED";
-  statusOnchain: "FAIL" | "PENDING" | "SUCCESS";
-  toPublicKey: string;
-  tokenId: string;
+  pluginName: string;
+  status: "pending" | "completed" | "failed";
   txHash: string;
-  updatedAt: string;
+  type: "per-tx" | "once" | "recurring";
 };
 
 export type User = {

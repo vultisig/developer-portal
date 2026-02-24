@@ -1,14 +1,14 @@
 import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
 import { useResponsive } from "antd-style";
+import { Decimal } from "decimal.js";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getPlugin } from "@/api/portal";
-import { AmoutView } from "@/components/AmoutView";
+import { getEarnings, getPlugin } from "@/api/portal";
 import { DateView } from "@/components/DateView";
-import { TokenView } from "@/components/TokenView";
-import { transactions } from "@/data/mock";
+import { MiddleTruncate } from "@/components/MiddleTruncate";
+import { useCore } from "@/hooks/useCore";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
@@ -17,18 +17,26 @@ import { SquareArrowOutTopLeftIcon } from "@/icons/SquareArrowOutTopLeftIcon";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { camelCaseToTitle, getExplorerUrl, match } from "@/utils/functions";
+import {
+  camelCaseToTitle,
+  getExplorerUrl,
+  kebabCaseToTitle,
+  match,
+  toValueFormat,
+} from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
 import { Plugin, Transaction } from "@/utils/types";
 
 type StateProps = {
   plugin?: Plugin;
+  earnings: Transaction[];
 };
 
-export const PluginTransactionsPage = () => {
-  const [state, setState] = useState<StateProps>({});
-  const { plugin } = state;
+export const PluginEarningsPage = () => {
+  const [state, setState] = useState<StateProps>({ earnings: [] });
+  const { earnings, plugin } = state;
   const { token } = antTheme.useToken();
+  const { baseValue, currency } = useCore();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
   const colors = useTheme();
@@ -36,11 +44,43 @@ export const PluginTransactionsPage = () => {
 
   const columns: TableProps<Transaction>["columns"] = [
     {
-      dataIndex: "tokenId",
-      key: "tokenId",
-      title: "Token",
-      render: (_, { chain, tokenId }) => {
-        return <TokenView chain={chain} id={tokenId} />;
+      dataIndex: "feeAsset",
+      key: "feeAsset",
+      title: "From",
+      render: (_, { feeAsset }) => {
+        return (
+          <MiddleTruncate $style={{ width: "140px" }}>
+            {feeAsset.addr}
+          </MiddleTruncate>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "type",
+      key: "type",
+      title: "Type",
+      render: (_, { type }) => {
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <Stack
+              as="span"
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.info.toRgba(0.05),
+                borderRadius: "4px",
+                color: colors.info.toHex(),
+                fontSize: "12px",
+                gap: "4px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {kebabCaseToTitle(type).toUpperCase()}
+            </Stack>
+          </HStack>
+        );
       },
     },
     {
@@ -48,10 +88,20 @@ export const PluginTransactionsPage = () => {
       dataIndex: "amount",
       key: "amount",
       title: "Amount",
-      render: (_, { amount, chain, tokenId }) => {
-        if (!amount) return "-";
-
-        return <AmoutView amount={amount} chain={chain} tokenId={tokenId} />;
+      render: (_, { amount, feeAsset }) => {
+        return (
+          <Stack
+            as="span"
+            $style={{ color: colors.success.toHex() }}
+          >{`${toValueFormat(
+            new Decimal(amount)
+              .mul(new Decimal(baseValue))
+              .div(new Decimal(10).pow(feeAsset.decimals))
+              .toString(),
+            currency,
+            feeAsset.decimals,
+          )} ${feeAsset.symbol}`}</Stack>
+        );
       },
     },
     {
@@ -68,13 +118,11 @@ export const PluginTransactionsPage = () => {
       dataIndex: "statusOnchain",
       key: "statusOnchain",
       title: "Status",
-      render: (_, { statusOnchain }) => {
-        if (!statusOnchain) return "-";
-
-        const color = match(statusOnchain, {
-          FAIL: () => colors.error,
-          PENDING: () => colors.warning,
-          SUCCESS: () => colors.success,
+      render: (_, { status }) => {
+        const color = match(status, {
+          failed: () => colors.error,
+          pending: () => colors.warning,
+          completed: () => colors.success,
         });
 
         return (
@@ -93,7 +141,7 @@ export const PluginTransactionsPage = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              {camelCaseToTitle(statusOnchain.toLowerCase())}
+              {camelCaseToTitle(status)}
             </Stack>
           </HStack>
         );
@@ -105,10 +153,10 @@ export const PluginTransactionsPage = () => {
       key: "txHash",
       title: "Action",
       width: 100,
-      render: (_, { txHash, chain }) => {
+      render: (_, { txHash, feeAsset }) => {
         if (!txHash) return null;
 
-        const explorerUrl = getExplorerUrl(chain, "tx", txHash);
+        const explorerUrl = getExplorerUrl(feeAsset.network, "tx", txHash);
 
         return (
           <HStack $style={{ gap: "8px", justifyContent: "center" }}>
@@ -133,16 +181,17 @@ export const PluginTransactionsPage = () => {
     },
   ];
 
-  const handlePluginChange = useEffectEvent(async (pluginId: string) => {
+  const handlePluginChange = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, plugin: undefined }));
 
     const plugin = await getPlugin(pluginId);
+    const earnings = await getEarnings({});
 
-    setState((prev) => ({ ...prev, plugin }));
+    setState((prev) => ({ ...prev, earnings, plugin }));
   });
 
   useEffect(() => {
-    handlePluginChange(pluginId);
+    handlePluginChange();
   }, [pluginId]);
 
   const stats = [
@@ -346,11 +395,7 @@ export const PluginTransactionsPage = () => {
           Transactions
         </Stack>
       </HStack>
-      <Table<Transaction>
-        columns={columns}
-        dataSource={transactions}
-        rowKey="id"
-      />
+      <Table<Transaction> columns={columns} dataSource={earnings} rowKey="id" />
     </VStack>
   );
 };
