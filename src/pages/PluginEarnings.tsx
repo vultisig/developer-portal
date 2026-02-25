@@ -8,7 +8,6 @@ import {
   Tooltip,
 } from "antd";
 import { useResponsive } from "antd-style";
-import { Decimal } from "decimal.js";
 import { debounce } from "lodash-es";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -33,6 +32,7 @@ import {
   getExplorerUrl,
   kebabCaseToTitle,
   match,
+  toDecimalFormat,
   toValueFormat,
 } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
@@ -102,17 +102,17 @@ export const PluginEarningsPage = () => {
       title: "Amount",
       render: (_, { amount, feeAsset }) => {
         return (
-          <Stack
-            as="span"
-            $style={{ color: colors.success.toHex() }}
-          >{`${toValueFormat(
-            new Decimal(amount)
-              .mul(new Decimal(baseValue))
-              .div(new Decimal(10).pow(feeAsset.decimals))
-              .toString(),
-            currency,
-            feeAsset.decimals,
-          )} ${feeAsset.symbol}`}</Stack>
+          <Stack as="span" $style={{ color: colors.success.toHex() }}>
+            {baseValue ? (
+              `${toValueFormat(
+                toDecimalFormat(amount, baseValue, feeAsset.decimals),
+                currency,
+                feeAsset.decimals,
+              )} ${feeAsset.symbol}`
+            ) : (
+              <Spin size="small" />
+            )}
+          </Stack>
         );
       },
     },
@@ -236,21 +236,21 @@ export const PluginEarningsPage = () => {
       icon: ChartSixIcon,
       label: "Total Revenue",
       unit: "All time",
-      value: "$3.5K",
+      value: "0",
     },
     {
       color: colors.success,
       icon: PeopleAddedIcon,
       label: "Active Users",
       unit: "Last 30 days",
-      value: "426",
+      value: "0",
     },
     {
       color: colors.accentFour,
       icon: NewspaperIcon,
       label: "Transactions",
       unit: "Last 30 days",
-      value: "1.8K",
+      value: earnings.length,
     },
   ];
 

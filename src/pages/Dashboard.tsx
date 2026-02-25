@@ -5,7 +5,8 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getPlugins } from "@/api/portal";
+import { getEarningSummary, getPlugins } from "@/api/portal";
+import { useCore } from "@/hooks/useCore";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { InboxEmptyIcon } from "@/icons/InboxEmptyIcon";
 import { PeopleCopyIcon } from "@/icons/PeopleCopyIcon";
@@ -13,43 +14,68 @@ import { PlusSmallIcon } from "@/icons/PlusSmallIcon";
 import { PuzzleIcon } from "@/icons/PuzzleIcon";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { toDecimalFormat, toValueFormat } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Plugin } from "@/utils/types";
+import { EarningSummary, Plugin } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
   plugins: Plugin[];
-};
+} & Partial<EarningSummary>;
 
 export const DashboardPage = () => {
   const [state, setState] = useState<StateProps>({
     loading: true,
     plugins: [],
   });
-  const { loading, plugins } = state;
+  const { loading, plugins, totalEarnings } = state;
   const { token } = antTheme.useToken();
+  const { baseValue, currency } = useCore();
   const { md, xl } = useResponsive();
   const colors = useTheme();
 
-  const fetchPlugins = useEffectEvent(async () => {
+  const fetchData = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
+    const { totalEarnings } = await getEarningSummary();
     const plugins = await getPlugins();
 
-    setState((prev) => ({ ...prev, loading: false, plugins }));
+    setState((prev) => ({
+      ...prev,
+      loading: false,
+      plugins,
+      totalEarnings,
+    }));
   });
 
   useEffect(() => {
-    fetchPlugins();
+    fetchData();
   }, []);
 
   const items = [
-    { icon: <DollarIcon />, title: "Total Revenue", value: "$2.3k" },
-    { icon: <PeopleCopyIcon />, title: "Total Users", value: "2.8k" },
+    {
+      icon: <DollarIcon />,
+      title: "Total Revenue",
+      value:
+        baseValue && totalEarnings ? (
+          toValueFormat(
+            toDecimalFormat(
+              totalEarnings.amount,
+              baseValue,
+              totalEarnings.feeAsset.decimals,
+            ),
+            currency,
+            totalEarnings.feeAsset.decimals,
+          )
+        ) : (
+          <Spin />
+        ),
+    },
+    { icon: <PeopleCopyIcon />, title: "Total Users", value: 0 },
     {
       icon: <PuzzleIcon />,
       title: "Total Plugins",
-      value: loading ? <Spin /> : String(plugins.length),
+      value: loading ? <Spin /> : plugins.length,
     },
   ];
 

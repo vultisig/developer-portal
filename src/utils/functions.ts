@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { Decimal } from "decimal.js";
 
 import { Chain, chains, explorerBaseUrl } from "@/utils/chain";
 import { Currency, currencySymbols } from "@/utils/currency";
@@ -202,6 +203,17 @@ export const toCamelCase = <T>(obj: T): T => {
   }
 
   return obj;
+};
+
+export const toDecimalFormat = (
+  value: number | string,
+  baseValue: number | string,
+  decimals: number,
+): string => {
+  return new Decimal(value)
+    .mul(new Decimal(baseValue))
+    .div(new Decimal(10).pow(decimals))
+    .toString();
 };
 
 // export const toKebabCase = <T>(obj: T): T => {

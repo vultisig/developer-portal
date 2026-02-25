@@ -1,5 +1,11 @@
-
-import { FC, ReactNode, useCallback, useEffect, useState } from "react";
+import {
+  FC,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useState,
+} from "react";
 
 import { getBaseValue } from "@/api/third-party/crypto";
 import { CoreContext, CoreContextProps } from "@/context/Core";
@@ -21,12 +27,19 @@ type StateProps = Pick<
 
 export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<StateProps>({
-    baseValue: 1,
     currency: getCurrency(),
     currentRoute: "root",
     theme: getTheme(),
   });
   const { baseValue, currency, currentRoute, theme } = state;
+
+  const fetchBaseValue = useEffectEvent(async () => {
+    setState((prev) => ({ ...prev, baseValue: undefined }));
+
+    const baseValue = await getBaseValue(currency);
+
+    setState((prev) => ({ ...prev, baseValue }));
+  });
 
   const setCurrentRoute = useCallback((currentRoute: RouteKey) => {
     setState((prev) => ({ ...prev, currentRoute }));
@@ -53,9 +66,7 @@ export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   });
 
   useEffect(() => {
-    getBaseValue(currency).then((baseValue) =>
-      setState((prev) => ({ ...prev, baseValue })),
-    );
+    fetchBaseValue();
   }, [currency]);
 
   return (

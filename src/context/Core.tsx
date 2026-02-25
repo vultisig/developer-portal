@@ -7,7 +7,7 @@ import { RouteKey } from "@/utils/routes";
 import { Theme } from "@/utils/theme";
 
 export type CoreContextProps = {
-  baseValue: number;
+  baseValue?: number;
   currency: Currency;
   currentRoute: RouteKey;
   setCurrency: typeof setCurrency;

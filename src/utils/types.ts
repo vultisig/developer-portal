@@ -32,6 +32,12 @@ export type EarningFilters = Partial<
   Pick<Earning, "pluginId" | "status" | "type">
 >;
 
+export type EarningSummary = {
+  earningsByPlugin: Record<string, Pick<Earning, "amount" | "feeAsset">>;
+  totalEarnings: Pick<Earning, "amount" | "feeAsset">;
+  totalTransactions: number;
+};
+
 export type Image = {
   contentType: ImageMime;
   data: string;

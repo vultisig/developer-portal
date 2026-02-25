@@ -94,7 +94,7 @@ export const ProjectManagementPage = () => {
                 { type: "email", message: "Please enter a valid email!" },
               ]}
             >
-              <Input placeholder="your@email.com" />
+              <Input placeholder="contact@example.com" />
             </Form.Item>
           </Form>
         </Stack>

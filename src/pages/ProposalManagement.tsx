@@ -391,7 +391,7 @@ export const ProposalManagementPage = () => {
                     },
                   ]}
                 >
-                  <Input placeholder="https://your-plugin.example.com" />
+                  <Input placeholder="contact@example.com" />
                 </Form.Item>
                 <Form.Item<Proposal> label="Optional notes" name="notes">
                   <Input.TextArea placeholder="Any additional information or questions" />

@@ -6,6 +6,7 @@ import {
   AuthToken,
   Earning,
   EarningFilters,
+  EarningSummary,
   Member,
   Plugin,
   Proposal,
@@ -50,6 +51,10 @@ export const getEarnings = async (
   params: EarningFilters,
 ): Promise<Earning[]> => {
   return apiClient.get<Earning[]>("/earnings", { params });
+};
+
+export const getEarningSummary = async (): Promise<EarningSummary> => {
+  return apiClient.get<EarningSummary>("/earnings/summary");
 };
 
 export const getPlugin = async (pluginId: string): Promise<Plugin> => {

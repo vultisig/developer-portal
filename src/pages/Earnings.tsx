@@ -8,13 +8,12 @@ import {
   Tooltip,
 } from "antd";
 import { useResponsive } from "antd-style";
-import { Decimal } from "decimal.js";
 import { debounce } from "lodash-es";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getEarnings, getPlugins } from "@/api/portal";
+import { getEarnings, getEarningSummary, getPlugins } from "@/api/portal";
 import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
@@ -23,6 +22,7 @@ import { CoinsAddIcon } from "@/icons/CoinsAddIcon";
 import { LineChartOneIcon } from "@/icons/LineChartOneIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { SquareArrowOutTopLeftIcon } from "@/icons/SquareArrowOutTopLeftIcon";
+import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { earningStatuses, earningTypes } from "@/utils/constants";
 import {
@@ -30,15 +30,16 @@ import {
   getExplorerUrl,
   kebabCaseToTitle,
   match,
+  toDecimalFormat,
   toValueFormat,
 } from "@/utils/functions";
-import { Earning, EarningFilters, Plugin } from "@/utils/types";
+import { Earning, EarningFilters, EarningSummary, Plugin } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
   earnings: Earning[];
   plugins: Plugin[];
-};
+} & Partial<EarningSummary>;
 
 export const EarningsPage = () => {
   const [state, setState] = useState<StateProps>({
@@ -46,7 +47,8 @@ export const EarningsPage = () => {
     earnings: [],
     plugins: [],
   });
-  const { loading, earnings, plugins } = state;
+  const { loading, earnings, plugins, totalEarnings, totalTransactions } =
+    state;
   const { token } = antTheme.useToken();
   const { baseValue, currency } = useCore();
   const { filters, setFilters } = useFilterParams<EarningFilters>();
@@ -82,17 +84,17 @@ export const EarningsPage = () => {
       title: "Amount",
       render: (_, { amount, feeAsset }) => {
         return (
-          <Stack
-            as="span"
-            $style={{ color: colors.success.toHex() }}
-          >{`${toValueFormat(
-            new Decimal(amount)
-              .mul(new Decimal(baseValue))
-              .div(new Decimal(10).pow(feeAsset.decimals))
-              .toString(),
-            currency,
-            feeAsset.decimals,
-          )} ${feeAsset.symbol}`}</Stack>
+          <Stack as="span" $style={{ color: colors.success.toHex() }}>
+            {baseValue ? (
+              `${toValueFormat(
+                toDecimalFormat(amount, baseValue, feeAsset.decimals),
+                currency,
+                feeAsset.decimals,
+              )} ${feeAsset.symbol}`
+            ) : (
+              <Spin size="small" />
+            )}
+          </Stack>
         );
       },
     },
@@ -220,10 +222,16 @@ export const EarningsPage = () => {
     setState((prev) => ({ ...prev, loading: false, earnings }));
   });
 
-  const fetchPlugins = useEffectEvent(async () => {
+  const fetchData = useEffectEvent(async () => {
+    const { totalEarnings, totalTransactions } = await getEarningSummary();
     const plugins = await getPlugins();
 
-    setState((prev) => ({ ...prev, plugins }));
+    setState((prev) => ({
+      ...prev,
+      plugins,
+      totalEarnings,
+      totalTransactions,
+    }));
   });
 
   useEffect(() => {
@@ -231,7 +239,7 @@ export const EarningsPage = () => {
   }, [filters]);
 
   useEffect(() => {
-    fetchPlugins();
+    fetchData();
   }, []);
 
   const stats = [
@@ -239,19 +247,32 @@ export const EarningsPage = () => {
       color: colors.textPrimary,
       icon: CoinsAddIcon,
       label: "Total Revenue",
-      value: "$2,3k",
+      value:
+        baseValue && totalEarnings ? (
+          toValueFormat(
+            toDecimalFormat(
+              totalEarnings.amount,
+              baseValue,
+              totalEarnings.feeAsset.decimals,
+            ),
+            currency,
+            totalEarnings.feeAsset.decimals,
+          )
+        ) : (
+          <Spin />
+        ),
     },
     {
       color: colors.success,
       icon: LineChartOneIcon,
       label: "Revenue Growth",
-      value: "+32%",
+      value: "0%",
     },
     {
       color: colors.textPrimary,
       icon: NewspaperIcon,
       label: "Total Transactions",
-      value: "1.7K",
+      value: totalTransactions === undefined ? <Spin /> : totalTransactions,
     },
   ];
 
