@@ -39,13 +39,17 @@ import { routeTree } from "@/utils/routes";
 import { Earning, EarningFilters, Plugin } from "@/utils/types";
 
 type StateProps = {
+  loading: boolean;
   plugin?: Plugin;
   earnings: Earning[];
 };
 
 export const PluginEarningsPage = () => {
-  const [state, setState] = useState<StateProps>({ earnings: [] });
-  const { earnings, plugin } = state;
+  const [state, setState] = useState<StateProps>({
+    loading: true,
+    earnings: [],
+  });
+  const { loading, earnings, plugin } = state;
   const { token } = antTheme.useToken();
   const { baseValue, currency } = useCore();
   const { filters, setFilters } = useFilterParams<EarningFilters>();
@@ -213,12 +217,16 @@ export const PluginEarningsPage = () => {
   });
 
   const fetchPlugin = useEffectEvent(async () => {
-    setState((prev) => ({ ...prev, loading: true, plugin: undefined }));
+    setState((prev) => ({ ...prev, plugin: undefined }));
 
     const plugin = await getPlugin(pluginId);
 
-    setState((prev) => ({ ...prev, loading: false, plugin }));
+    setState((prev) => ({ ...prev, plugin }));
   });
+
+  useEffect(() => {
+    return () => debouncedHandleFilter.cancel();
+  }, [debouncedHandleFilter]);
 
   useEffect(() => {
     if (!plugin) return;
@@ -410,6 +418,7 @@ export const PluginEarningsPage = () => {
       <Table<Earning>
         columns={columns}
         dataSource={earnings}
+        loading={loading}
         pagination={false}
         rowKey="id"
       />

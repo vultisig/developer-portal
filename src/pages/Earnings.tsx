@@ -235,6 +235,10 @@ export const EarningsPage = () => {
   });
 
   useEffect(() => {
+    return () => debouncedHandleFilter.cancel();
+  }, [debouncedHandleFilter]);
+
+  useEffect(() => {
     fetchEarnings();
   }, [filters]);
 

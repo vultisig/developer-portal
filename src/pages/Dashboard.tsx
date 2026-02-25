@@ -286,6 +286,7 @@ export const DashboardPage = () => {
                         {Boolean(logoUrl) && (
                           <Stack
                             as="img"
+                            alt={title}
                             src={logoUrl}
                             $style={{
                               borderRadius: "16px",
