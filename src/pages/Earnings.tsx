@@ -46,7 +46,7 @@ export const EarningsPage = () => {
     earnings: [],
     plugins: [],
   });
-  const { earnings, plugins } = state;
+  const { loading, earnings, plugins } = state;
   const { token } = antTheme.useToken();
   const { baseValue, currency } = useCore();
   const { filters, setFilters } = useFilterParams<EarningFilters>();
@@ -397,6 +397,7 @@ export const EarningsPage = () => {
       <Table<Earning>
         columns={columns}
         dataSource={earnings}
+        loading={loading}
         pagination={false}
         rowKey="id"
       />
