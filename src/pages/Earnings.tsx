@@ -213,6 +213,8 @@ export const EarningsPage = () => {
   const fetchEarnings = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
+    form.setFieldsValue(filters);
+
     const earnings = await getEarnings(filters);
 
     setState((prev) => ({ ...prev, loading: false, earnings }));
@@ -370,7 +372,7 @@ export const EarningsPage = () => {
             <Form.Item<EarningFilters> name="status" noStyle>
               <Select
                 options={earningStatuses.map((status) => ({
-                  label: status,
+                  label: camelCaseToTitle(status),
                   value: status,
                 }))}
                 placeholder="Status"
@@ -392,7 +394,12 @@ export const EarningsPage = () => {
           </HStack>
         </Form>
       </HStack>
-      <Table<Earning> columns={columns} dataSource={earnings} rowKey="id" />
+      <Table<Earning>
+        columns={columns}
+        dataSource={earnings}
+        pagination={false}
+        rowKey="id"
+      />
     </VStack>
   );
 };

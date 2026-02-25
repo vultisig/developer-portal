@@ -1,7 +1,16 @@
-import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
+import {
+  Form,
+  FormProps,
+  Select,
+  Table,
+  TableProps,
+  theme as antTheme,
+  Tooltip,
+} from "antd";
 import { useResponsive } from "antd-style";
 import { Decimal } from "decimal.js";
-import { useEffect, useEffectEvent, useState } from "react";
+import { debounce } from "lodash-es";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
@@ -9,6 +18,7 @@ import { getEarnings, getPlugin } from "@/api/portal";
 import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
@@ -17,6 +27,7 @@ import { SquareArrowOutTopLeftIcon } from "@/icons/SquareArrowOutTopLeftIcon";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { earningStatuses, earningTypes } from "@/utils/constants";
 import {
   camelCaseToTitle,
   getExplorerUrl,
@@ -25,7 +36,7 @@ import {
   toValueFormat,
 } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Earning,Plugin } from "@/utils/types";
+import { Earning, EarningFilters, Plugin } from "@/utils/types";
 
 type StateProps = {
   plugin?: Plugin;
@@ -37,8 +48,10 @@ export const PluginEarningsPage = () => {
   const { earnings, plugin } = state;
   const { token } = antTheme.useToken();
   const { baseValue, currency } = useCore();
+  const { filters, setFilters } = useFilterParams<EarningFilters>();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
+  const [form] = Form.useForm<EarningFilters>();
   const colors = useTheme();
 
   const columns: TableProps<Earning>["columns"] = [
@@ -153,7 +166,7 @@ export const PluginEarningsPage = () => {
       title: "Action",
       width: 100,
       render: (_, { txHash, feeAsset }) => {
-        if (!txHash) return null;
+        if (!txHash) return "-";
 
         const explorerUrl = getExplorerUrl(feeAsset.network, "tx", txHash);
 
@@ -180,17 +193,41 @@ export const PluginEarningsPage = () => {
     },
   ];
 
-  const handlePluginChange = useEffectEvent(async () => {
-    setState((prev) => ({ ...prev, plugin: undefined }));
+  const debouncedHandleFilter = useMemo(
+    () => debounce(setFilters, 500),
+    [setFilters],
+  );
+
+  const handleFilter: FormProps["onValuesChange"] = (_, values) => {
+    debouncedHandleFilter(values);
+  };
+
+  const fetchEarnings = useEffectEvent(async () => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    form.setFieldsValue(filters);
+
+    const earnings = await getEarnings({ ...filters, pluginId });
+
+    setState((prev) => ({ ...prev, loading: false, earnings }));
+  });
+
+  const fetchPlugin = useEffectEvent(async () => {
+    setState((prev) => ({ ...prev, loading: true, plugin: undefined }));
 
     const plugin = await getPlugin(pluginId);
-    const earnings = await getEarnings({ pluginId });
 
-    setState((prev) => ({ ...prev, earnings, plugin }));
+    setState((prev) => ({ ...prev, loading: false, plugin }));
   });
 
   useEffect(() => {
-    handlePluginChange();
+    if (!plugin) return;
+
+    fetchEarnings();
+  }, [filters, plugin]);
+
+  useEffect(() => {
+    fetchPlugin();
   }, [pluginId]);
 
   const stats = [
@@ -343,8 +380,39 @@ export const PluginEarningsPage = () => {
         >
           Transactions
         </Stack>
+        <Form<EarningFilters> form={form} onValuesChange={handleFilter}>
+          <HStack $style={{ gap: "16px" }}>
+            <Form.Item<EarningFilters> name="status" noStyle>
+              <Select
+                options={earningStatuses.map((status) => ({
+                  label: camelCaseToTitle(status),
+                  value: status,
+                }))}
+                placeholder="Status"
+                styles={{ root: { paddingBlock: 8, width: 110 } }}
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item<EarningFilters> name="type" noStyle>
+              <Select
+                options={earningTypes.map((type) => ({
+                  label: kebabCaseToTitle(type),
+                  value: type,
+                }))}
+                placeholder="Type"
+                styles={{ root: { paddingBlock: 8, width: 110 } }}
+                allowClear
+              />
+            </Form.Item>
+          </HStack>
+        </Form>
       </HStack>
-      <Table<Earning> columns={columns} dataSource={earnings} rowKey="id" />
+      <Table<Earning>
+        columns={columns}
+        dataSource={earnings}
+        pagination={false}
+        rowKey="id"
+      />
     </VStack>
   );
 };
