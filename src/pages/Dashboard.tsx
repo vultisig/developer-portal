@@ -49,7 +49,7 @@ export const DashboardPage = () => {
     {
       icon: <PuzzleIcon />,
       title: "Total Plugins",
-      value: String(plugins.length),
+      value: loading ? <Spin /> : String(plugins.length),
     },
   ];
 
@@ -180,60 +180,60 @@ export const DashboardPage = () => {
           </VStack>
         </VStack>
       </Stack>
-      <Stack
-        $style={{
-          display: "grid",
-          gap: "16px",
-          gridTemplateColumns: xl ? "repeat(2, 1fr)" : "repeat(1, 1fr)",
-        }}
-      >
-        <VStack
+      {loading ? (
+        <Spin centered />
+      ) : plugins.length ? (
+        <Stack
           $style={{
-            backgroundColor: colors.bgTertiary.toHex(),
-            borderRadius: "20px",
-            gap: "20px",
-            overflow: "hidden",
-            padding: "20px",
+            display: "grid",
+            gap: "16px",
+            gridTemplateColumns: xl ? "repeat(2, 1fr)" : "repeat(1, 1fr)",
           }}
         >
-          <HStack
-            $style={{ alignItems: "center", justifyContent: "space-between" }}
+          <VStack
+            $style={{
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderRadius: "20px",
+              gap: "20px",
+              overflow: "hidden",
+              padding: "20px",
+            }}
           >
-            <VStack $style={{ gap: "2px" }}>
-              <Stack
-                as="span"
-                $style={{ fontSize: "22px", lineHeight: "24px" }}
-              >
-                Top Plugins
-              </Stack>
-              <Stack
-                as="span"
-                $style={{
-                  color: colors.textTertiary.toHex(),
-                  fontSize: "13px",
-                  lineHeight: "18px",
-                }}
-              >
-                Last 6 weeks performance
-              </Stack>
-            </VStack>
-            <Stack
-              as={Link}
-              to={routeTree.root.path}
-              $style={{
-                color: colors.info.toHex(),
-                transition: "color 0.2s ease-in-out",
-              }}
-              $hover={{ color: colors.info.lighten(10).toHex() }}
+            <HStack
+              $style={{ alignItems: "center", justifyContent: "space-between" }}
             >
-              See all plugins
-            </Stack>
-          </HStack>
-          <VStack $style={{ gap: "12px" }}>
-            {loading ? (
-              <Spin centered />
-            ) : (
-              plugins.map(
+              <VStack $style={{ gap: "2px" }}>
+                <Stack
+                  as="span"
+                  $style={{ fontSize: "22px", lineHeight: "24px" }}
+                >
+                  Top Plugins
+                </Stack>
+                <Stack
+                  as="span"
+                  $style={{
+                    color: colors.textTertiary.toHex(),
+                    fontSize: "13px",
+                    lineHeight: "18px",
+                  }}
+                >
+                  Last 6 weeks performance
+                </Stack>
+              </VStack>
+              <Stack
+                as={Link}
+                to={routeTree.plugins.path}
+                $style={{
+                  color: colors.info.toHex(),
+                  transition: "color 0.2s ease-in-out",
+                }}
+                $hover={{ color: colors.info.lighten(10).toHex() }}
+              >
+                See all plugins
+              </Stack>
+            </HStack>
+            <VStack $style={{ gap: "12px" }}>
+              {plugins.map(
                 ({ category, createdAt, description, id, logoUrl, title }) => (
                   <VStack
                     key={id}
@@ -380,84 +380,85 @@ export const DashboardPage = () => {
                     </HStack>
                   </VStack>
                 ),
-              )
-            )}
-          </VStack>
-        </VStack>
-        <VStack
-          $style={{
-            backgroundColor: colors.bgTertiary.toHex(),
-            borderRadius: "20px",
-            gap: "16px",
-            padding: "20px",
-          }}
-        >
-          <HStack
-            $style={{ alignItems: "center", justifyContent: "space-between" }}
-          >
-            <VStack $style={{ gap: "2px" }}>
-              <Stack
-                as="span"
-                $style={{ fontSize: "22px", lineHeight: "24px" }}
-              >
-                Revenue Analytics
-              </Stack>
-              <Stack
-                as="span"
-                $style={{
-                  color: colors.textTertiary.toHex(),
-                  fontSize: "13px",
-                  lineHeight: "18px",
-                }}
-              >
-                Last 6 weeks performance
-              </Stack>
+              )}
             </VStack>
-            <Stack
-              as={Link}
-              to={routeTree.root.path}
-              $style={{
-                color: colors.info.toHex(),
-                transition: "color 0.2s ease-in-out",
-              }}
-              $hover={{ color: colors.info.lighten(10).toHex() }}
-            >
-              See all earnings
-            </Stack>
-          </HStack>
-        </VStack>
-      </Stack>
-      <VStack $style={{ alignItems: "center", gap: "36px", padding: "60px" }}>
-        <VStack
-          $style={{
-            alignItems: "center",
-            backgroundColor: colors.bgTertiary.toHex(),
-            borderRadius: "20px",
-            fontSize: "38px",
-            height: "66px",
-            justifyContent: "center",
-            width: "66px",
-          }}
-        >
-          <InboxEmptyIcon />
-        </VStack>
-        <VStack $style={{ alignItems: "center", gap: "12px" }}>
-          <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
-            You don’t have any plugins yet
-          </Stack>
-          <Stack
-            as="span"
+          </VStack>
+          <VStack
             $style={{
-              color: colors.textTertiary.toHex(),
-              fontSize: "13px",
-              lineHeight: "18px",
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderRadius: "20px",
+              gap: "16px",
+              padding: "20px",
             }}
           >
-            Once you publish a plugin, you’ll see usage, revenue, and
-            performance insights here.
-          </Stack>
+            <HStack
+              $style={{ alignItems: "center", justifyContent: "space-between" }}
+            >
+              <VStack $style={{ gap: "2px" }}>
+                <Stack
+                  as="span"
+                  $style={{ fontSize: "22px", lineHeight: "24px" }}
+                >
+                  Revenue Analytics
+                </Stack>
+                <Stack
+                  as="span"
+                  $style={{
+                    color: colors.textTertiary.toHex(),
+                    fontSize: "13px",
+                    lineHeight: "18px",
+                  }}
+                >
+                  Last 6 weeks performance
+                </Stack>
+              </VStack>
+              <Stack
+                as={Link}
+                to={routeTree.earnings.path}
+                $style={{
+                  color: colors.info.toHex(),
+                  transition: "color 0.2s ease-in-out",
+                }}
+                $hover={{ color: colors.info.lighten(10).toHex() }}
+              >
+                See all earnings
+              </Stack>
+            </HStack>
+          </VStack>
+        </Stack>
+      ) : (
+        <VStack $style={{ alignItems: "center", gap: "36px", padding: "60px" }}>
+          <VStack
+            $style={{
+              alignItems: "center",
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderRadius: "20px",
+              fontSize: "38px",
+              height: "66px",
+              justifyContent: "center",
+              width: "66px",
+            }}
+          >
+            <InboxEmptyIcon />
+          </VStack>
+          <VStack $style={{ alignItems: "center", gap: "12px" }}>
+            <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
+              You don’t have any plugins yet
+            </Stack>
+            <Stack
+              as="span"
+              $style={{
+                color: colors.textTertiary.toHex(),
+                fontSize: "13px",
+                lineHeight: "18px",
+              }}
+            >
+              Once you publish a plugin, you’ll see usage, revenue, and
+              performance insights here.
+            </Stack>
+          </VStack>
         </VStack>
-      </VStack>
+      )}
     </VStack>
   );
 };

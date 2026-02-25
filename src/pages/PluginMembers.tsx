@@ -158,7 +158,7 @@ export const PluginMembersPage = () => {
           columns={columns}
           dataSource={members}
           loading={loading}
-          rowKey="id"
+          rowKey="publicKey"
         />
       </VStack>
 
@@ -185,7 +185,9 @@ export const PluginMembersPage = () => {
             <Select
               options={[
                 { value: "admin", label: "Admin" },
-                { value: "developer", label: "Developer" },
+                { value: "staff", label: "Staff" },
+                { value: "editor", label: "Editor" },
+                { value: "viewer", label: "Viewer" },
               ]}
               placeholder="Select"
             />

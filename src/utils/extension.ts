@@ -57,12 +57,6 @@ export const getVault = async () => {
   }
 };
 
-export const isAvailable = async () => {
-  if (!window.vultisig) throw new Error("Please install Vultisig Extension");
-
-  return;
-};
-
 export const personalSign = async (
   address: string,
   message: string,

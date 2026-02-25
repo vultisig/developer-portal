@@ -44,16 +44,16 @@ const stackPropertiesToString = (props: StackProps) => {
 
   return css`
     ${defaultPropertiesToString(props)}
-    ${$media?.lg &&
-    css`
-      @media (min-width: ${screenLG}px) {
-        ${defaultPropertiesToString($media.lg)}
-      }
-    `}
     ${$media?.md &&
     css`
       @media (min-width: ${screenMD}px) {
         ${defaultPropertiesToString($media.md)}
+      }
+    `}
+    ${$media?.lg &&
+    css`
+      @media (min-width: ${screenLG}px) {
+        ${defaultPropertiesToString($media.lg)}
       }
     `}
     ${$media?.xl &&

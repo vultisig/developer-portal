@@ -20,16 +20,16 @@ export const delAuthToken = async (token: string): Promise<void> => {
   return apiClient.del(`/auth/tokens/${token_id}`);
 };
 
-export const delMember = async (
-  pluginId: string,
-  address: string,
-): Promise<string> => {
-  const { message } = await apiClient.del<{ message: string }>(
-    `/plugins/${pluginId}/team/${encodeURIComponent(address)}`,
-  );
+// export const delMember = async (
+//   pluginId: string,
+//   address: string,
+// ): Promise<string> => {
+//   const { message } = await apiClient.del<{ message: string }>(
+//     `/plugins/${pluginId}/team/${encodeURIComponent(address)}`,
+//   );
 
-  return message;
-};
+//   return message;
+// };
 
 export const getAuthToken = async (data: {
   chainCodeHex: string;

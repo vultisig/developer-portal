@@ -221,7 +221,7 @@ export const toCamelCase = <T>(obj: T): T => {
 //   return obj;
 // };
 
-export const toNumberFormat = (value: number | string, decimal = 20) => {
+const toNumberFormat = (value: number | string, decimal = 20) => {
   const str = String(value).trim();
 
   // If not a valid number string, return as-is

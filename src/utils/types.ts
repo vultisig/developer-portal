@@ -21,22 +21,6 @@ export type Image = {
 
 export type ImageMime = "image/jpeg" | "image/png";
 
-export type OneInchToken = {
-  address: string;
-  symbol: string;
-  decimals: number;
-  logoURI?: string;
-  name: string;
-};
-
-export type JupiterToken = {
-  id: string;
-  symbol: string;
-  decimals: number;
-  icon?: string;
-  name: string;
-};
-
 export type Plugin = {
   category: string;
   createdAt: string;
@@ -67,15 +51,6 @@ export type Proposal = {
   title: string;
   thumbnail?: string; // Only for form submission, not returned by API
   updatedAt: string;
-};
-
-export type Token = {
-  chain: Chain;
-  decimals: number;
-  id: string;
-  logo: string;
-  name: string;
-  ticker: string;
 };
 
 export type Member = {

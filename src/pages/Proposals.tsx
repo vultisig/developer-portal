@@ -80,12 +80,6 @@ export const ProposalsPage = () => {
     },
     {
       align: "center",
-      dataIndex: "price",
-      key: "price",
-      title: "Price",
-    },
-    {
-      align: "center",
       dataIndex: "serverEndpoint",
       key: "serverEndpoint",
       title: "Endpoint",

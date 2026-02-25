@@ -1,5 +1,3 @@
-export const defaultPageSize = 12;
-
 export const modalHash = {
   currency: "#currency",
   form: "#form",
