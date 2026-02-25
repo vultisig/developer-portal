@@ -4,10 +4,11 @@ import { apiClient } from "@/api/client";
 import { toSnakeCase } from "@/utils/functions";
 import {
   AuthToken,
+  Earning,
+  EarningFilters,
   Member,
   Plugin,
   Proposal,
-  Transaction,
 } from "@/utils/types";
 
 export const createProposal = async (proposal: Proposal): Promise<void> => {
@@ -45,6 +46,12 @@ export const getAuthToken = async (data: {
   return { accessToken: token, refreshToken: token };
 };
 
+export const getEarnings = async (
+  params: EarningFilters,
+): Promise<Earning[]> => {
+  return apiClient.get<Earning[]>("/earnings", { params });
+};
+
 export const getPlugin = async (pluginId: string): Promise<Plugin> => {
   return apiClient.get<Plugin>(`/plugins/${pluginId}`);
 };
@@ -59,16 +66,6 @@ export const getProposal = async (pluginId: string): Promise<Proposal> => {
 
 export const getProposals = async (): Promise<Proposal[]> => {
   return apiClient.get<Proposal[]>("/plugin-proposals");
-};
-
-export const getEarnings = async ({
-  pluginId,
-}: {
-  pluginId?: string;
-}): Promise<Transaction[]> => {
-  return apiClient.get<Transaction[]>("/earnings", {
-    params: { pluginId },
-  });
 };
 
 export const getMembers = async (pluginId: string): Promise<Member[]> => {

@@ -170,7 +170,7 @@ export const match = <T extends string | number | symbol, V>(
 export const parseBase64DataUrl = (
   dataUrl: string,
 ): { mime: string; base64: string } => {
-  const [prefix, base64] = dataUrl.split(",");
+  const [prefix, base64 = ""] = dataUrl.split(",");
 
   const mimeMatch = prefix.match(/data:(.*);base64/);
   const mime = mimeMatch ? mimeMatch[1] : "";

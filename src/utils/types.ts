@@ -1,6 +1,7 @@
 import type * as CSS from "csstype";
 
 import { Chain } from "@/utils/chain";
+import { earningStatuses, earningTypes } from "@/utils/constants";
 
 export type AuthToken = {
   accessToken: string;
@@ -8,6 +9,28 @@ export type AuthToken = {
 };
 
 export type CSSProperties = CSS.Properties<string>;
+
+export type Earning = {
+  amount: string;
+  createdAt: string;
+  feeAsset: {
+    addr: string;
+    decimals: number;
+    network: Chain;
+    symbol: string;
+  };
+  fromAddress: string;
+  id: string;
+  pluginId: string;
+  pluginName: string;
+  status: (typeof earningStatuses)[number];
+  txHash: string;
+  type: (typeof earningTypes)[number];
+};
+
+export type EarningFilters = Partial<
+  Pick<Earning, "pluginId" | "status" | "type">
+>;
 
 export type Image = {
   contentType: ImageMime;
@@ -60,24 +83,6 @@ export type Member = {
   isCurrentUser: boolean;
   publicKey: string;
   role: "admin" | "editor" | "staff" | "viewer";
-};
-
-export type Transaction = {
-  amount: string;
-  createdAt: string;
-  feeAsset: {
-    addr: string;
-    decimals: number;
-    network: Chain;
-    symbol: string;
-  };
-  fromAddress: string;
-  id: string;
-  pluginId: string;
-  pluginName: string;
-  status: "pending" | "completed" | "failed";
-  txHash: string;
-  type: "per-tx" | "once" | "recurring";
 };
 
 export type Vault = {

@@ -1,19 +1,30 @@
-import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
+import {
+  Form,
+  FormProps,
+  Select,
+  Table,
+  TableProps,
+  theme as antTheme,
+  Tooltip,
+} from "antd";
 import { useResponsive } from "antd-style";
 import { Decimal } from "decimal.js";
-import { useEffect, useEffectEvent, useState } from "react";
+import { debounce } from "lodash-es";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getEarnings } from "@/api/portal";
+import { getEarnings, getPlugins } from "@/api/portal";
 import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import { CoinsAddIcon } from "@/icons/CoinsAddIcon";
 import { LineChartOneIcon } from "@/icons/LineChartOneIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { SquareArrowOutTopLeftIcon } from "@/icons/SquareArrowOutTopLeftIcon";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
+import { earningStatuses, earningTypes } from "@/utils/constants";
 import {
   camelCaseToTitle,
   getExplorerUrl,
@@ -21,25 +32,29 @@ import {
   match,
   toValueFormat,
 } from "@/utils/functions";
-import { Transaction } from "@/utils/types";
+import { Earning, EarningFilters, Plugin } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
-  earnings: Transaction[];
+  earnings: Earning[];
+  plugins: Plugin[];
 };
 
 export const EarningsPage = () => {
   const [state, setState] = useState<StateProps>({
     loading: true,
     earnings: [],
+    plugins: [],
   });
-  const { earnings } = state;
+  const { earnings, plugins } = state;
   const { token } = antTheme.useToken();
   const { baseValue, currency } = useCore();
+  const { filters, setFilters } = useFilterParams<EarningFilters>();
   const { md } = useResponsive();
+  const [form] = Form.useForm<EarningFilters>();
   const colors = useTheme();
 
-  const columns: TableProps<Transaction>["columns"] = [
+  const columns: TableProps<Earning>["columns"] = [
     {
       dataIndex: "pluginName",
       key: "pluginName",
@@ -103,7 +118,7 @@ export const EarningsPage = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              {kebabCaseToTitle(type).toUpperCase()}
+              {kebabCaseToTitle(type)}
             </Stack>
           </HStack>
         );
@@ -159,7 +174,7 @@ export const EarningsPage = () => {
       title: "Action",
       width: 100,
       render: (_, { txHash, feeAsset }) => {
-        if (!txHash) return null;
+        if (!txHash) return "-";
 
         const explorerUrl = getExplorerUrl(feeAsset.network, "tx", txHash);
 
@@ -186,16 +201,35 @@ export const EarningsPage = () => {
     },
   ];
 
+  const debouncedHandleFilter = useMemo(
+    () => debounce(setFilters, 500),
+    [setFilters],
+  );
+
+  const handleFilter: FormProps["onValuesChange"] = (_, values) => {
+    debouncedHandleFilter(values);
+  };
+
   const fetchEarnings = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
-    const earnings = await getEarnings({});
+    const earnings = await getEarnings(filters);
 
     setState((prev) => ({ ...prev, loading: false, earnings }));
   });
 
+  const fetchPlugins = useEffectEvent(async () => {
+    const plugins = await getPlugins();
+
+    setState((prev) => ({ ...prev, plugins }));
+  });
+
   useEffect(() => {
     fetchEarnings();
+  }, [filters]);
+
+  useEffect(() => {
+    fetchPlugins();
   }, []);
 
   const stats = [
@@ -257,7 +291,7 @@ export const EarningsPage = () => {
             $style={{
               backgroundColor: colors.bgTertiary.toHex(),
               borderColor: colors.borderLight.toHex(),
-              borderRadius: "20px",
+              borderRadius: "12px",
               borderStyle: "solid",
               borderWidth: "1px",
               gap: "20px",
@@ -291,7 +325,7 @@ export const EarningsPage = () => {
               $style={{
                 alignItems: "center",
                 backgroundColor: colors.textPrimary.toRgba(0.03),
-                borderRadius: "14px",
+                borderRadius: "12px",
                 height: "60px",
                 justifyContent: "center",
                 width: "60px",
@@ -317,8 +351,48 @@ export const EarningsPage = () => {
         >
           Transactions
         </Stack>
+        <Form<EarningFilters> form={form} onValuesChange={handleFilter}>
+          <HStack $style={{ gap: "16px" }}>
+            <Form.Item<EarningFilters> name="pluginId" noStyle>
+              <Select
+                options={plugins.map(({ id, title }) => ({
+                  label: title,
+                  value: id,
+                }))}
+                placeholder="Plugin"
+                styles={{
+                  popup: { root: { width: 236 } },
+                  root: { paddingBlock: 8, width: 110 },
+                }}
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item<EarningFilters> name="status" noStyle>
+              <Select
+                options={earningStatuses.map((status) => ({
+                  label: status,
+                  value: status,
+                }))}
+                placeholder="Status"
+                styles={{ root: { paddingBlock: 8, width: 110 } }}
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item<EarningFilters> name="type" noStyle>
+              <Select
+                options={earningTypes.map((type) => ({
+                  label: kebabCaseToTitle(type),
+                  value: type,
+                }))}
+                placeholder="Type"
+                styles={{ root: { paddingBlock: 8, width: 110 } }}
+                allowClear
+              />
+            </Form.Item>
+          </HStack>
+        </Form>
       </HStack>
-      <Table<Transaction> columns={columns} dataSource={earnings} rowKey="id" />
+      <Table<Earning> columns={columns} dataSource={earnings} rowKey="id" />
     </VStack>
   );
 };

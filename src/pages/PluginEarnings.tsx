@@ -25,11 +25,11 @@ import {
   toValueFormat,
 } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Plugin, Transaction } from "@/utils/types";
+import { Earning,Plugin } from "@/utils/types";
 
 type StateProps = {
   plugin?: Plugin;
-  earnings: Transaction[];
+  earnings: Earning[];
 };
 
 export const PluginEarningsPage = () => {
@@ -41,7 +41,7 @@ export const PluginEarningsPage = () => {
   const { md } = useResponsive();
   const colors = useTheme();
 
-  const columns: TableProps<Transaction>["columns"] = [
+  const columns: TableProps<Earning>["columns"] = [
     {
       dataIndex: "feeAsset",
       key: "feeAsset",
@@ -344,7 +344,7 @@ export const PluginEarningsPage = () => {
           Transactions
         </Stack>
       </HStack>
-      <Table<Transaction> columns={columns} dataSource={earnings} rowKey="id" />
+      <Table<Earning> columns={columns} dataSource={earnings} rowKey="id" />
     </VStack>
   );
 };

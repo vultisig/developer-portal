@@ -30,7 +30,10 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
     return {
       algorithm: algorithm[theme],
       token: {
-        borderRadius: 10,
+        borderRadius: 12,
+        borderRadiusLG: 12,
+        borderRadiusSM: 8,
+        borderRadiusXS: 4,
         colorBgBase: colors.bgPrimary.toHex(),
         colorBgContainer: colors.bgPrimary.toHex(),
         colorBgContainerDisabled: colors.bgTertiary.toHex(),
