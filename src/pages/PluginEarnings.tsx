@@ -127,8 +127,8 @@ export const PluginEarningsPage = () => {
     },
     {
       align: "center",
-      dataIndex: "statusOnchain",
-      key: "statusOnchain",
+      dataIndex: "status",
+      key: "status",
       title: "Status",
       render: (_, { status }) => {
         const color = match(status, {
