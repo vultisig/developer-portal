@@ -14,6 +14,7 @@ import { useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { createProposal, getProposal, validatePluginId } from "@/api/portal";
+import { StatusModal } from "@/components/StatusModal";
 import { useAntd } from "@/hooks/useAntd";
 import { useGoBack } from "@/hooks/useGoBack";
 import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
@@ -26,6 +27,7 @@ import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { chains } from "@/utils/chain";
 import { parseBase64DataUrl, tinyId, urlToBase64 } from "@/utils/functions";
+import { routeTree } from "@/utils/routes";
 import { Image, ImageMime, Proposal } from "@/utils/types";
 
 const steps = [
@@ -36,15 +38,17 @@ const steps = [
 ] as const;
 
 type StateProps = {
+  error?: string;
   proposal?: Proposal;
   loaded?: boolean;
   step: number;
   submitting?: boolean;
+  success?: string;
 };
 
 export const ProposalManagementPage = () => {
   const [state, setState] = useState<StateProps>({ step: 1 });
-  const { loaded, step, proposal, submitting } = state;
+  const { error, loaded, step, proposal, submitting, success } = state;
   const { token } = antTheme.useToken();
   const { onFinishFailed } = useAntd();
   const { pluginId = "" } = useParams();
@@ -59,6 +63,8 @@ export const ProposalManagementPage = () => {
     thumbnail,
     ...values
   }) => {
+    if (submitting) return;
+    
     if (step < steps.length) {
       setState((prev) => ({ ...prev, step: prev.step + 1 }));
     } else {
@@ -105,38 +111,44 @@ export const ProposalManagementPage = () => {
 
       setState((prev) => ({ ...prev, submitting: true }));
 
-      createProposal(values).finally(() => {
-        setState((prev) => ({ ...prev, submitting: false }));
-
-        form.resetFields();
-
-        goBack();
-      });
+      createProposal(values)
+        .then(() => {
+          setState((prev) => ({
+            ...prev,
+            submitting: false,
+            success: "Your proposal has been submitted!",
+          }));
+        })
+        .catch((error) => {
+          setState((prev) => ({
+            ...prev,
+            error: error?.error,
+            submitting: false,
+          }));
+        });
     }
   };
 
-  const handleProposalChange = useEffectEvent(async (pluginId: string) => {
-    if (pluginId) {
-      setState((prev) => ({ ...prev, loaded: false }));
+  const fetchProposal = useEffectEvent(async (pluginId: string) => {
+    setState((prev) => ({ ...prev, loaded: false }));
 
-      const { images, ...plugin } = await getProposal(pluginId);
+    const { images, ...plugin } = await getProposal(pluginId);
 
-      setState((prev) => ({ ...prev, loaded: true }));
+    const logoUrl = images.find(({ type }) => type === "logo")?.url;
+    const thumbnailUrl = images.find(({ type }) => type === "thumbnail")?.url;
 
-      const logoUrl = images.find(({ type }) => type === "logo")?.url;
-      const thumbnailUrl = images.find(({ type }) => type === "thumbnail")?.url;
+    if (logoUrl) plugin.logo = await urlToBase64(logoUrl);
+    if (thumbnailUrl) plugin.thumbnail = await urlToBase64(thumbnailUrl);
 
-      if (logoUrl) plugin.logo = await urlToBase64(logoUrl);
-      if (thumbnailUrl) plugin.thumbnail = await urlToBase64(thumbnailUrl);
+    setState((prev) => ({ ...prev, loaded: true }));
 
-      form.setFieldsValue(plugin);
-    } else {
-      setState((prev) => ({ ...prev, loaded: true }));
-    }
+    form.setFieldsValue(plugin);
   });
 
   useEffect(() => {
-    handleProposalChange(pluginId);
+    if (!pluginId) return;
+
+    fetchProposal(pluginId);
   }, [pluginId]);
 
   if (!loaded) return <Spin centered />;
@@ -446,6 +458,37 @@ export const ProposalManagementPage = () => {
           </Stack>
         </VStack>
       </VStack>
+
+      <StatusModal
+        onClose={() => goBack(routeTree.proposals.path)}
+        open={Boolean(success)}
+        success
+      >
+        <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
+          Submission Successful
+        </Stack>
+        <Stack
+          as="span"
+          $style={{ color: colors.textTertiary.toHex(), lineHeight: "18px" }}
+        >
+          {success}
+        </Stack>
+      </StatusModal>
+
+      <StatusModal
+        onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
+        open={Boolean(error)}
+      >
+        <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
+          Submission Failed
+        </Stack>
+        <Stack
+          as="span"
+          $style={{ color: colors.textTertiary.toHex(), lineHeight: "18px" }}
+        >
+          {error}
+        </Stack>
+      </StatusModal>
     </>
   );
 };
