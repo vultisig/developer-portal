@@ -64,7 +64,7 @@ export const ProposalManagementPage = () => {
     ...values
   }) => {
     if (submitting) return;
-    
+
     if (step < steps.length) {
       setState((prev) => ({ ...prev, step: prev.step + 1 }));
     } else {
@@ -130,24 +130,26 @@ export const ProposalManagementPage = () => {
   };
 
   const fetchProposal = useEffectEvent(async (pluginId: string) => {
-    setState((prev) => ({ ...prev, loaded: false }));
+    if (pluginId) {
+      setState((prev) => ({ ...prev, loaded: false }));
 
-    const { images, ...plugin } = await getProposal(pluginId);
+      const { images, ...plugin } = await getProposal(pluginId);
 
-    const logoUrl = images.find(({ type }) => type === "logo")?.url;
-    const thumbnailUrl = images.find(({ type }) => type === "thumbnail")?.url;
+      const logoUrl = images.find(({ type }) => type === "logo")?.url;
+      const thumbnailUrl = images.find(({ type }) => type === "thumbnail")?.url;
 
-    if (logoUrl) plugin.logo = await urlToBase64(logoUrl);
-    if (thumbnailUrl) plugin.thumbnail = await urlToBase64(thumbnailUrl);
+      if (logoUrl) plugin.logo = await urlToBase64(logoUrl);
+      if (thumbnailUrl) plugin.thumbnail = await urlToBase64(thumbnailUrl);
 
-    setState((prev) => ({ ...prev, loaded: true }));
+      setState((prev) => ({ ...prev, loaded: true }));
 
-    form.setFieldsValue(plugin);
+      form.setFieldsValue(plugin);
+    } else {
+      setState((prev) => ({ ...prev, loaded: true }));
+    }
   });
 
   useEffect(() => {
-    if (!pluginId) return;
-
     fetchProposal(pluginId);
   }, [pluginId]);
 
@@ -335,7 +337,7 @@ export const ProposalManagementPage = () => {
                     },
                     {
                       validator: async (_, value) => {
-                        if (!value) return;
+                        if (!value || step > 1) return;
 
                         const available = await validatePluginId(value);
 
