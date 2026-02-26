@@ -9,9 +9,10 @@ import { createStyles } from "antd-style";
 import { FC, ReactNode, useMemo } from "react";
 import { useTheme } from "styled-components";
 
-import { AntdContext } from "@/context/Antd";
+import { AntdContext, AntdContextProps } from "@/context/Antd";
 import { useCore } from "@/hooks/useCore";
 import { CrossLargeIcon } from "@/icons/CrossLargeIcon";
+import { imageToBase64, imageToDimensions } from "@/utils/functions";
 import { Theme } from "@/utils/theme";
 
 const algorithm: Record<Theme, ThemeConfig["algorithm"]> = {
@@ -97,6 +98,74 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
     };
   }, [colors, theme]);
 
+  const beforeUpload: AntdContextProps["beforeUpload"] = async ({
+    dimensions,
+    file,
+    form,
+    name,
+    onChange,
+    size,
+  }) => {
+    if (size && file.size / 1024 / 1024 > size) {
+      form.setFields([
+        {
+          name,
+          errors: [`Image must be smaller than ${size}MB`],
+        },
+      ]);
+
+      return false;
+    }
+
+    if (dimensions) {
+      const { height, width } = await imageToDimensions(file);
+
+      if (height > dimensions.height || width > dimensions.width) {
+        form.setFields([
+          {
+            name,
+            errors: [
+              `Image dimensions must be smaller than ${dimensions.width}x${dimensions.height}px`,
+            ],
+          },
+        ]);
+
+        return false;
+      }
+    }
+
+    const base64 = await imageToBase64(file);
+
+    onChange(base64);
+
+    return false;
+  };
+
+  const onFinishFailed: AntdContextProps["onFinishFailed"] = (
+    errorInfo,
+    form,
+  ) => {
+    const [errorField] = errorInfo.errorFields;
+
+    if (!errorField) return;
+
+    const element = document.getElementById(errorField.name.join("_"));
+
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    } else {
+      form.scrollToField(errorField.name, {
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+
+    form.focusField(errorField.name);
+  };
+
   return (
     <ConfigProvider
       theme={themeConfig}
@@ -104,7 +173,9 @@ export const AntdProvider: FC<{ children?: ReactNode }> = ({ children }) => {
       table={{ className: styles.table }}
       upload={{ className: styles.upload }}
     >
-      <AntdContext.Provider value={{ messageAPI, modalAPI }}>
+      <AntdContext.Provider
+        value={{ beforeUpload, messageAPI, modalAPI, onFinishFailed }}
+      >
         {children}
         {messageHolder}
         {modalHolder}

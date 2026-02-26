@@ -3,7 +3,6 @@ import { Decimal } from "decimal.js";
 
 import { Chain, chains, explorerBaseUrl } from "@/utils/chain";
 import { Currency, currencySymbols } from "@/utils/currency";
-import { CSSProperties } from "@/utils/types";
 
 const isArray = (arr: any): arr is any[] => {
   return Array.isArray(arr);
@@ -19,8 +18,21 @@ const toCamel = (value: string) => {
   });
 };
 
-const toKebab = (value: string) => {
-  return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+const toNumberFormat = (value: number | string, decimal = 20) => {
+  const str = String(value).trim();
+
+  // If not a valid number string, return as-is
+  if (!/^-?\d+(\.\d+)?$/.test(str)) return str;
+
+  const [intPartRaw, decPartRaw = ""] = str.split(".");
+
+  // Format integer part with commas
+  const intPart = intPartRaw.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  // Trim or pad decimals
+  const decPart = decPartRaw.slice(0, decimal);
+
+  return decPart.length > 0 ? `${intPart}.${decPart}` : intPart;
 };
 
 const toSnake = (value: string) => {
@@ -33,13 +45,6 @@ export const camelCaseToTitle = (input: string) => {
   return input
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\b\w/g, (char) => char.toUpperCase());
-};
-
-export const cssPropertiesToString = (styles: CSSProperties) => {
-  return Object.entries(styles)
-    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-    .map(([key, value]) => `${toKebab(key)}: ${value};`)
-    .join("\n");
 };
 
 export const formatDateWithTimezone = (date: string | number) => {
@@ -150,6 +155,17 @@ export const imageToBase64 = (file: File): Promise<string> => {
   });
 };
 
+export const imageToDimensions = (
+  file: File,
+): Promise<{ height: number; width: number }> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => resolve({ height: img.height, width: img.width });
+    img.onerror = reject;
+  });
+};
+
 export const kebabCaseToTitle = (input: string) => {
   if (!input) return input;
 
@@ -216,6 +232,10 @@ export const toDecimalFormat = (
     .toString();
 };
 
+export const toKebab = (value: string) => {
+  return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+};
+
 // export const toKebabCase = <T>(obj: T): T => {
 //   if (isObject(obj)) {
 //     const result: Record<string, unknown> = {};
@@ -232,23 +252,6 @@ export const toDecimalFormat = (
 
 //   return obj;
 // };
-
-const toNumberFormat = (value: number | string, decimal = 20) => {
-  const str = String(value).trim();
-
-  // If not a valid number string, return as-is
-  if (!/^-?\d+(\.\d+)?$/.test(str)) return str;
-
-  const [intPartRaw, decPartRaw = ""] = str.split(".");
-
-  // Format integer part with commas
-  const intPart = intPartRaw.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
-  // Trim or pad decimals
-  const decPart = decPartRaw.slice(0, decimal);
-
-  return decPart.length > 0 ? `${intPart}.${decPart}` : intPart;
-};
 
 export const toSnakeCase = <T>(obj: T): T => {
   if (isObject(obj)) {

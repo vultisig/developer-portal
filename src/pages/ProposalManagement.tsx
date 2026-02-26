@@ -14,6 +14,8 @@ import { useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { createProposal, getProposal, validatePluginId } from "@/api/portal";
+import { useAntd } from "@/hooks/useAntd";
+import { useGoBack } from "@/hooks/useGoBack";
 import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
 import { CrossLargeIcon } from "@/icons/CrossLargeIcon";
 import { EmailTwoIcon } from "@/icons/EmailTwoIcon";
@@ -23,19 +25,8 @@ import { Divider } from "@/toolkits/Divider";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { chains } from "@/utils/chain";
-import {
-  imageToBase64,
-  parseBase64DataUrl,
-  tinyId,
-  urlToBase64,
-} from "@/utils/functions";
+import { parseBase64DataUrl, tinyId, urlToBase64 } from "@/utils/functions";
 import { Image, ImageMime, Proposal } from "@/utils/types";
-
-type StateProps = {
-  proposal?: Proposal;
-  loaded?: boolean;
-  step: number;
-};
 
 const steps = [
   "Plugin Basics",
@@ -44,13 +35,22 @@ const steps = [
   "Contact Info",
 ] as const;
 
+type StateProps = {
+  proposal?: Proposal;
+  loaded?: boolean;
+  step: number;
+  submitting?: boolean;
+};
+
 export const ProposalManagementPage = () => {
   const [state, setState] = useState<StateProps>({ step: 1 });
-  const { loaded, step, proposal } = state;
+  const { loaded, step, proposal, submitting } = state;
   const { token } = antTheme.useToken();
+  const { onFinishFailed } = useAntd();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
   const [form] = Form.useForm<Proposal>();
+  const goBack = useGoBack();
   const colors = useTheme();
 
   const handleFinish: FormProps<Proposal>["onFinish"] = ({
@@ -103,7 +103,15 @@ export const ProposalManagementPage = () => {
       values.category = "app";
       values.images = images as Image[];
 
-      createProposal(values);
+      setState((prev) => ({ ...prev, submitting: true }));
+
+      createProposal(values).finally(() => {
+        setState((prev) => ({ ...prev, submitting: false }));
+
+        form.resetFields();
+
+        goBack();
+      });
     }
   };
 
@@ -152,7 +160,9 @@ export const ProposalManagementPage = () => {
               textAlign: "center",
             }}
           >
-            {!proposal ? "Register a New Plugin" : `Edit ${proposal.title} Plugin`}
+            {!proposal
+              ? "Register a New Plugin"
+              : `Edit ${proposal.title} Plugin`}
           </Stack>
           <Stack
             as="span"
@@ -252,11 +262,12 @@ export const ProposalManagementPage = () => {
               padding: "20px",
             }}
           >
-            <Form
+            <Form<Proposal>
               autoComplete="off"
               form={form}
               layout="vertical"
               onFinish={handleFinish}
+              onFinishFailed={(errorInfo) => onFinishFailed(errorInfo, form)}
               requiredMark={false}
             >
               <Stack $style={{ display: step === 1 ? "block" : "none" }}>
@@ -281,6 +292,9 @@ export const ProposalManagementPage = () => {
                   ]}
                 >
                   <UploadThumbnail />
+                </Form.Item>
+                <Form.Item<Proposal> name="banner">
+                  <UploadBanner />
                 </Form.Item>
                 <Form.Item<Proposal>
                   label="Plugin Name"
@@ -412,6 +426,7 @@ export const ProposalManagementPage = () => {
             )}
             <Button
               icon={step === steps.length && <EmailTwoIcon fontSize={16} />}
+              loading={submitting}
               onClick={() => form.submit()}
             >
               {step === steps.length ? "Send to Vultisig Team" : "Continue"}
@@ -435,23 +450,105 @@ export const ProposalManagementPage = () => {
   );
 };
 
-const UploadLogo: FC<{
+const UploadBanner: FC<{
   onChange?: (value?: string) => void;
   value?: string;
 }> = ({ onChange, value }) => {
+  const { beforeUpload } = useAntd();
+  const form = Form.useFormInstance<Proposal>();
   const colors = useTheme();
 
   return (
-    <HStack $style={{ alignItems: "center", gap: "16px" }}>
+    <VStack id="banner">
+      <ImgCrop aspect={16 / 9}>
+        <Upload.Dragger
+          beforeUpload={(file) =>
+            beforeUpload({
+              dimensions: { height: 1080, width: 1920 },
+              file,
+              form,
+              name: "banner",
+              onChange: (base64) => onChange?.(base64),
+              size: 2,
+            })
+          }
+          listType="picture-card"
+          multiple={false}
+          showUploadList={false}
+        >
+          {value ? (
+            <VStack as="img" src={value} $style={{ width: "100%" }} />
+          ) : (
+            <VStack
+              $style={{
+                alignItems: "center",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                justifyContent: "center",
+                padding: "40px",
+              }}
+            >
+              <VStack
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.bgTertiary.toHex(),
+                  borderRadius: "12px",
+                  color: colors.accentFour.toHex(),
+                  height: "48px",
+                  justifyContent: "center",
+                  width: "48px",
+                }}
+              >
+                {<ImagesFiveIcon fontSize={24} />}
+              </VStack>
+              <Stack
+                as="span"
+                $style={{ fontSize: "16px", lineHeight: "24px" }}
+              >
+                Choose Plugin Banner
+              </Stack>
+              <VStack
+                as="span"
+                $style={{
+                  color: colors.textTertiary.toHex(),
+                  fontSize: "12px",
+                  lineHeight: "16px",
+                }}
+              >
+                <Stack as="span">JPG/PNG/WebP aspect ratio 16:9</Stack>
+                <Stack as="span">Recommended 1920 × 1080px size</Stack>
+              </VStack>
+            </VStack>
+          )}
+        </Upload.Dragger>
+      </ImgCrop>
+    </VStack>
+  );
+};
+
+const UploadLogo: FC<{
+  onChange?: (value: string) => void;
+  value?: string;
+}> = ({ onChange, value }) => {
+  const { beforeUpload } = useAntd();
+  const form = Form.useFormInstance<Proposal>();
+  const colors = useTheme();
+
+  return (
+    <HStack id="logo" $style={{ alignItems: "center", gap: "16px" }}>
       <ImgCrop>
         <Upload
-          beforeUpload={async (file) => {
-            const base64 = await imageToBase64(file);
-
-            onChange?.(base64);
-
-            return false;
-          }}
+          beforeUpload={(file) =>
+            beforeUpload({
+              dimensions: { height: 512, width: 512 },
+              file,
+              form,
+              name: "logo",
+              onChange: (base64) => onChange?.(base64),
+              size: 2,
+            })
+          }
           listType="picture-card"
           multiple={false}
           showUploadList={false}
@@ -487,7 +584,7 @@ const UploadLogo: FC<{
             lineHeight: "16px",
           }}
         >
-          JPG/PNG/WebP Recommended Square image
+          JPG/PNG/WebP Recommended 512px × 512px size
         </VStack>
       </VStack>
     </HStack>
@@ -495,14 +592,16 @@ const UploadLogo: FC<{
 };
 
 const UploadMedia: FC<{
-  onChange?: (value?: string[]) => void;
+  onChange?: (value: string[]) => void;
   value?: string[];
 }> = ({ onChange, value = [] }) => {
   const { sm } = useResponsive();
+  const { beforeUpload } = useAntd();
+  const form = Form.useFormInstance<Proposal>();
   const colors = useTheme();
 
   return (
-    <VStack $style={{ gap: "16px" }}>
+    <VStack id="media" $style={{ gap: "16px" }}>
       {value.length > 0 && (
         <Masonry
           columns={sm ? 2 : 1}
@@ -537,13 +636,16 @@ const UploadMedia: FC<{
         />
       )}
       <Upload.Dragger
-        beforeUpload={async (file) => {
-          const base64 = await imageToBase64(file);
-
-          onChange?.([...value, base64]);
-
-          return false;
-        }}
+        beforeUpload={(file) =>
+          beforeUpload({
+            dimensions: { height: 1080, width: 1920 },
+            file,
+            form,
+            name: "logo",
+            onChange: (base64) => onChange?.([...value, base64]),
+            size: 2,
+          })
+        }
         listType="picture-card"
         multiple={false}
         disabled={value.length >= 6}
@@ -596,65 +698,75 @@ const UploadThumbnail: FC<{
   onChange?: (value?: string) => void;
   value?: string;
 }> = ({ onChange, value }) => {
+  const { beforeUpload } = useAntd();
+  const form = Form.useFormInstance<Proposal>();
   const colors = useTheme();
 
   return (
-    <ImgCrop aspect={3 / 2}>
-      <Upload.Dragger
-        beforeUpload={async (file) => {
-          const base64 = await imageToBase64(file);
-
-          onChange?.(base64);
-
-          return false;
-        }}
-        listType="picture-card"
-        multiple={false}
-        showUploadList={false}
-      >
-        {value ? (
-          <VStack as="img" src={value} $style={{ width: "100%" }} />
-        ) : (
-          <VStack
-            $style={{
-              alignItems: "center",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              justifyContent: "center",
-              padding: "40px",
-            }}
-          >
+    <VStack id="thumbnail">
+      <ImgCrop aspect={3 / 2}>
+        <Upload.Dragger
+          beforeUpload={(file) =>
+            beforeUpload({
+              dimensions: { height: 600, width: 800 },
+              file,
+              form,
+              name: "logo",
+              onChange: (base64) => onChange?.(base64),
+              size: 2,
+            })
+          }
+          listType="picture-card"
+          multiple={false}
+          showUploadList={false}
+        >
+          {value ? (
+            <VStack as="img" src={value} $style={{ width: "100%" }} />
+          ) : (
             <VStack
               $style={{
                 alignItems: "center",
-                backgroundColor: colors.bgTertiary.toHex(),
-                borderRadius: "12px",
-                color: colors.accentFour.toHex(),
-                height: "48px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
                 justifyContent: "center",
-                width: "48px",
+                padding: "40px",
               }}
             >
-              {<ImagesFiveIcon fontSize={24} />}
+              <VStack
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.bgTertiary.toHex(),
+                  borderRadius: "12px",
+                  color: colors.accentFour.toHex(),
+                  height: "48px",
+                  justifyContent: "center",
+                  width: "48px",
+                }}
+              >
+                {<ImagesFiveIcon fontSize={24} />}
+              </VStack>
+              <Stack
+                as="span"
+                $style={{ fontSize: "16px", lineHeight: "24px" }}
+              >
+                Choose Plugin Thumbnail
+              </Stack>
+              <VStack
+                as="span"
+                $style={{
+                  color: colors.textTertiary.toHex(),
+                  fontSize: "12px",
+                  lineHeight: "16px",
+                }}
+              >
+                <Stack as="span">JPG/PNG/WebP aspect ratio 4:3</Stack>
+                <Stack as="span">Recommended 800px × 600px size</Stack>
+              </VStack>
             </VStack>
-            <Stack as="span" $style={{ fontSize: "16px", lineHeight: "24px" }}>
-              Choose Plugin Thumbnail
-            </Stack>
-            <VStack
-              as="span"
-              $style={{
-                color: colors.textTertiary.toHex(),
-                fontSize: "12px",
-                lineHeight: "16px",
-              }}
-            >
-              <Stack as="span">JPG/PNG/WebP aspect ratio 3:2</Stack>
-              <Stack as="span">recommended 1620 × 1080px size</Stack>
-            </VStack>
-          </VStack>
-        )}
-      </Upload.Dragger>
-    </ImgCrop>
+          )}
+        </Upload.Dragger>
+      </ImgCrop>
+    </VStack>
   );
 };

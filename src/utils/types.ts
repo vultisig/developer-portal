@@ -1,5 +1,3 @@
-import type * as CSS from "csstype";
-
 import { Chain } from "@/utils/chain";
 import { earningStatuses, earningTypes } from "@/utils/constants";
 
@@ -7,8 +5,6 @@ export type AuthToken = {
   accessToken: string;
   refreshToken: string;
 };
-
-export type CSSProperties = CSS.Properties<string>;
 
 export type Earning = {
   amount: string;
@@ -64,6 +60,7 @@ export type Plugin = {
 };
 
 export type Proposal = {
+  banner?: string; // Only for form submission, not returned by API
   category: string;
   contactEmail: string;
   createdAt: string;

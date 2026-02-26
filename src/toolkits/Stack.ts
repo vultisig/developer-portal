@@ -1,10 +1,16 @@
-import { theme } from "antd";
+import type * as CSS from "csstype";
 import styled, { css } from "styled-components";
 
-import { cssPropertiesToString } from "@/utils/functions";
-import { CSSProperties } from "@/utils/types";
+import { toKebab } from "@/utils/functions";
 
-export const { screenLG, screenMD, screenXL } = theme.getDesignToken();
+type CSSProperties = CSS.Properties<string>;
+
+const cssPropertiesToString = (styles: CSSProperties) => {
+  return Object.entries(styles)
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+    .map(([key, value]) => `${toKebab(key)}: ${value};`)
+    .join("\n");
+};
 
 const defaultPropertiesToString = (props: DefaultProps) => {
   const { $after, $before, $hover, $style } = props;
@@ -46,19 +52,19 @@ const stackPropertiesToString = (props: StackProps) => {
     ${defaultPropertiesToString(props)}
     ${$media?.md &&
     css`
-      @media (min-width: ${screenMD}px) {
+      @media (min-width: 768px) {
         ${defaultPropertiesToString($media.md)}
       }
     `}
     ${$media?.lg &&
     css`
-      @media (min-width: ${screenLG}px) {
+      @media (min-width: 992px) {
         ${defaultPropertiesToString($media.lg)}
       }
     `}
     ${$media?.xl &&
     css`
-      @media (min-width: ${screenXL}px) {
+      @media (min-width: 1200px) {
         ${defaultPropertiesToString($media.xl)}
       }
     `}
