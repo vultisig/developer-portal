@@ -8,12 +8,22 @@ import {
   EarningFilters,
   EarningSummary,
   Member,
+  MemberInvitation,
   Plugin,
   Proposal,
 } from "@/utils/types";
 
 export const createProposal = async (proposal: Proposal): Promise<void> => {
   return apiClient.post("/plugin-proposals", toSnakeCase(proposal));
+};
+
+export const createTeamInvite = async (
+  pluginId: string,
+  role: Member["role"],
+): Promise<MemberInvitation> => {
+  return apiClient.post<MemberInvitation>(`/plugins/${pluginId}/team/invite`, {
+    role,
+  });
 };
 
 export const delAuthToken = async (token: string): Promise<void> => {

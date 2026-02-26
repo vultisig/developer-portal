@@ -1,5 +1,5 @@
 import { Chain } from "@/utils/chain";
-import { earningStatuses, earningTypes } from "@/utils/constants";
+import { earningStatuses, earningTypes, memberRoles } from "@/utils/constants";
 
 export type AuthToken = {
   accessToken: string;
@@ -85,7 +85,13 @@ export type Member = {
   createdAt: string;
   isCurrentUser: boolean;
   publicKey: string;
-  role: "admin" | "editor" | "staff" | "viewer";
+  role: (typeof memberRoles)[number];
+};
+
+export type MemberInvitation = {
+  link: string;
+  expiresAt: string;
+  role: Member["role"];
 };
 
 export type Vault = {

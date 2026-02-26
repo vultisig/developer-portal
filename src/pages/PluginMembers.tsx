@@ -1,5 +1,6 @@
 import {
   Form,
+  FormProps,
   Modal,
   Select,
   Table,
@@ -11,20 +12,23 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { getMembers } from "@/api/portal";
+import { createTeamInvite, getMembers } from "@/api/portal";
+import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
+import { StatusModal } from "@/components/StatusModal";
+import { useAntd } from "@/hooks/useAntd";
 import { useGoBack } from "@/hooks/useGoBack";
 import { PeopleAddIcon } from "@/icons/PeopleAddIcon";
 import { TrashCanIcon } from "@/icons/TrashCanIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { modalHash } from "@/utils/constants";
-import { camelCaseToTitle, snakeCaseToTitle } from "@/utils/functions";
-import { Member } from "@/utils/types";
+import { memberRoles, modalHash } from "@/utils/constants";
+import { camelCaseToTitle, match, snakeCaseToTitle } from "@/utils/functions";
+import { Member, MemberInvitation } from "@/utils/types";
 
 type StateProps = {
+  invite?: MemberInvitation;
   loading: boolean;
-  member?: Member;
   members: Member[];
 };
 
@@ -33,8 +37,9 @@ export const PluginMembersPage = () => {
     loading: true,
     members: [],
   });
-  const { loading, member, members } = state;
+  const { invite, loading, members } = state;
   const { token } = antTheme.useToken();
+  const { messageAPI } = useAntd();
   const { hash } = useLocation();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
@@ -42,7 +47,7 @@ export const PluginMembersPage = () => {
   const goBack = useGoBack();
   const navigate = useNavigate();
   const colors = useTheme();
-  const open = hash === modalHash.form;
+  const open = hash === modalHash.invite;
 
   const columns: TableProps<Member>["columns"] = [
     {
@@ -77,28 +82,26 @@ export const PluginMembersPage = () => {
       key: "id",
       title: "Action",
       width: 100,
-      render: (_, member) => (
+      render: () => (
         <HStack $style={{ justifyContent: "center" }}>
-          {member.role === "admin" && (
-            <HStack
-              as="span"
-              $style={{
-                backgroundColor: colors.bgTertiary.toHex(),
-                borderRadius: "50%",
-                cursor: "pointer",
-                padding: "12px",
-              }}
-              $hover={{ color: colors.error.toHex() }}
-            >
-              <TrashCanIcon fontSize={16} />
-            </HStack>
-          )}
+          <HStack
+            as="span"
+            $style={{
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderRadius: "50%",
+              cursor: "pointer",
+              padding: "12px",
+            }}
+            $hover={{ color: colors.error.toHex() }}
+          >
+            <TrashCanIcon fontSize={16} />
+          </HStack>
         </HStack>
       ),
     },
   ];
 
-  const handlePluginChange = useEffectEvent(async () => {
+  const fetchMembers = useEffectEvent(async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
     const members = await getMembers(pluginId);
@@ -106,19 +109,35 @@ export const PluginMembersPage = () => {
     setState((prev) => ({ ...prev, loading: false, members }));
   });
 
+  const handleClipboard = () => {
+    if (!invite) return;
+
+    navigator.clipboard.writeText(invite.link).then(() => {
+      messageAPI.success("Invite link copied to clipboard");
+
+      setState((prev) => ({ ...prev, invite: undefined }));
+    });
+  };
+
+  const handleFinish: FormProps<Member>["onFinish"] = async ({ role }) => {
+    const invite = await createTeamInvite(pluginId, role);
+
+    form.resetFields();
+
+    setState((prev) => ({ ...prev, invite }));
+
+    goBack();
+  };
+
   useEffect(() => {
-    handlePluginChange();
+    fetchMembers();
   }, [pluginId]);
 
   useEffect(() => {
     if (!open) return;
 
     form.resetFields();
-
-    if (!member) return;
-
-    form.setFieldsValue(member);
-  }, [form, member, open]);
+  }, [form, open]);
 
   return (
     <>
@@ -149,7 +168,7 @@ export const PluginMembersPage = () => {
           </VStack>
           <Button
             icon={<PeopleAddIcon fontSize={20} />}
-            onClick={() => navigate(modalHash.form, { state: true })}
+            onClick={() => navigate(modalHash.invite, { state: true })}
           >
             {md && "Invite Member"}
           </Button>
@@ -164,36 +183,80 @@ export const PluginMembersPage = () => {
 
       <Modal
         footer={
-          <Button onClick={() => form.submit()}>
-            {member ? "Save Info" : "Send Invite"}
-          </Button>
+          <Button onClick={() => form.submit()}>Create Invite Link</Button>
         }
         mask={{ closable: false }}
-        onCancel={() => {
-          setState((prev) => ({ ...prev, member: undefined }));
-          goBack();
-        }}
+        onCancel={() => goBack()}
         open={open}
-        title={member ? "Edit a team member" : "Invite a team member"}
+        styles={{
+          body: { display: "flex", flexDirection: "column", gap: "16px" },
+        }}
+        title="Invite a team member"
       >
-        <Form form={form} layout="vertical" requiredMark={false}>
+        <Stack $style={{ color: colors.textSecondary.toHex() }}>
+          Create an invite link to add a new team member. The link will expire
+          in 8 hours and can only be used once.
+        </Stack>
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          onFinish={handleFinish}
+        >
           <Form.Item<Member>
-            label="Role"
             name="role"
             rules={[{ required: true, message: "Please select the role" }]}
           >
             <Select
-              options={[
-                { value: "admin", label: "Admin" },
-                { value: "staff", label: "Staff" },
-                { value: "editor", label: "Editor" },
-                { value: "viewer", label: "Viewer" },
-              ]}
-              placeholder="Select"
+              options={memberRoles.map((role) => ({
+                label: camelCaseToTitle(role),
+                value: role,
+              }))}
+              placeholder="Select Role"
             />
+          </Form.Item>
+          <Form.Item<Member>
+            shouldUpdate={(prev, current) => prev.role !== current.role}
+            noStyle
+          >
+            {({ getFieldsValue }) => {
+              const { role } = getFieldsValue();
+
+              if (!role) return null;
+
+              return (
+                <Stack
+                  as="span"
+                  $style={{ color: colors.textTertiary.toHex() }}
+                >
+                  {match(role, {
+                    editor: () =>
+                      "Editors can create and manage plugins but cannot manage team members.",
+                    viewer: () =>
+                      "Viewers can only view plugin information without access to earnings or management features.",
+                  })}
+                </Stack>
+              );
+            }}
           </Form.Item>
         </Form>
       </Modal>
+
+      <StatusModal
+        onClose={() => setState((prev) => ({ ...prev, invite: undefined }))}
+        open={Boolean(invite)}
+        success
+      >
+        <VStack $style={{ gap: "24px" }}>
+          <Button onClick={handleClipboard}>Copy Link</Button>
+          <VStack $style={{ textAlign: "center" }}>
+            <Stack as="span" $style={{ color: colors.textSecondary.toHex() }}>
+              Invite Link Expires At
+            </Stack>
+            <DateView date={invite?.expiresAt ?? ""} />
+          </VStack>
+        </VStack>
+      </StatusModal>
     </>
   );
 };
