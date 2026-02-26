@@ -1,202 +1,87 @@
-import { message as Message, Modal } from "antd";
-import { hexlify, randomBytes } from "ethers";
-import { FC, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  FC,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useState,
+} from "react";
 
-import { authenticate, setUnauthorizedHandler } from "@/api/client";
-import { CoreContext, CoreContextProps, VaultInfo } from "@/context/Core";
+import { getBaseValue } from "@/api/third-party/crypto";
+import { CoreContext, CoreContextProps } from "@/context/Core";
 import { storageKeys } from "@/storage/constants";
+import {
+  getCurrency,
+  setCurrency as setCurrencyStorage,
+} from "@/storage/currency";
 import { useLocalStorageWatcher } from "@/storage/hooks/useLocalStorageWatcher";
 import { getTheme, setTheme as setThemeStorage } from "@/storage/theme";
-import { delToken, getToken, setToken } from "@/storage/token";
-import { delVaultId, getVaultId, setVaultId } from "@/storage/vaultId";
-import {
-  connect as connectToExtension,
-  disconnect as disconnectFromExtension,
-  getVault,
-  personalSign,
-} from "@/utils/extension";
+import { Currency } from "@/utils/currency";
+import { RouteKey } from "@/utils/routes";
 import { Theme } from "@/utils/theme";
 
-type StateProps = Pick<CoreContextProps, "address" | "theme" | "vault">;
+type StateProps = Pick<
+  CoreContextProps,
+  "baseValue" | "currency" | "currentRoute" | "theme"
+>;
 
 export const CoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<StateProps>({
+    currency: getCurrency(),
+    currentRoute: "root",
     theme: getTheme(),
   });
-  const { address, theme, vault } = state;
-  const [messageAPI, messageHolder] = Message.useMessage();
-  const [modalAPI, modalHolder] = Modal.useModal();
+  const { baseValue, currency, currentRoute, theme } = state;
 
-  // Stable ref so the unauthorized handler always sees the latest address/vault
-  // without needing to re-register on every state change.
-  const sessionRef = useRef<{ address?: string; vault?: VaultInfo }>({});
-  useEffect(() => {
-    sessionRef.current = { address, vault };
-  }, [address, vault]);
+  const fetchBaseValue = useEffectEvent(async () => {
+    setState((prev) => ({ ...prev, baseValue: undefined }));
 
-  const clear = useCallback(() => {
-    disconnectFromExtension().finally(() => {
-      delToken(getVaultId());
-      delVaultId();
-      setState((prevState) => ({
-        ...prevState,
-        address: undefined,
-        vault: undefined,
-      }));
-    });
+    const baseValue = await getBaseValue(currency);
+
+    setState((prev) => ({ ...prev, baseValue }));
+  });
+
+  const setCurrentRoute = useCallback((currentRoute: RouteKey) => {
+    setState((prev) => ({ ...prev, currentRoute }));
   }, []);
 
-  useEffect(() => {
-    setUnauthorizedHandler(async () => {
-      const { address, vault } = sessionRef.current;
+  const setCurrency = (currency: Currency, fromStorage?: boolean) => {
+    if (!fromStorage) setCurrencyStorage(currency);
 
-      if (!address || !vault) {
-        clear();
-        throw new Error("Not connected");
-      }
-
-      messageAPI.warning("Your session has expired. Please sign again to continue.");
-      delToken(vault.publicKeyEcdsa);
-
-      const nonce = hexlify(randomBytes(16));
-      const expiryTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-      const message = JSON.stringify({
-        message: "Sign into Vultisig Developer Portal",
-        nonce,
-        expiresAt: expiryTime,
-        address,
-      });
-
-      try {
-        const signature = await personalSign(address, message, "connect");
-        const response = await authenticate({
-          chain_code_hex: vault.hexChainCode,
-          public_key: vault.publicKeyEcdsa,
-          signature,
-          message,
-        });
-        setToken(vault.publicKeyEcdsa, response.token);
-        return response.token;
-      } catch (err) {
-        clear();
-        throw err;
-      }
-    });
-  }, [clear, messageAPI]);
-
-  const connect = useCallback(() => {
-    connectToExtension()
-      .then((address: string) =>
-        getVault()
-          .then(async (vaultData) => {
-            const {
-              name,
-              hexChainCode,
-              publicKeyEcdsa,
-              publicKeyEddsa,
-              uid,
-            } = vaultData;
-
-            const vaultInfo: VaultInfo = {
-              name,
-              publicKeyEcdsa,
-              publicKeyEddsa,
-              hexChainCode,
-              uid,
-            };
-
-            const token = getToken(publicKeyEcdsa);
-
-            if (token) {
-              setVaultId(publicKeyEcdsa);
-
-              setState((prevState) => ({
-                ...prevState,
-                address,
-                vault: vaultInfo,
-              }));
-            } else {
-              const nonce = hexlify(randomBytes(16));
-              const expiryTime = new Date(
-                Date.now() + 15 * 60 * 1000
-              ).toISOString();
-
-              const message = JSON.stringify({
-                message: "Sign into Vultisig Developer Portal",
-                nonce: nonce,
-                expiresAt: expiryTime,
-                address,
-              });
-
-              personalSign(address, message, "connect").then((signature) =>
-                authenticate({
-                  chain_code_hex: hexChainCode,
-                  public_key: publicKeyEcdsa,
-                  signature,
-                  message,
-                })
-                  .then((response) => {
-                    setToken(publicKeyEcdsa, response.token);
-                    setVaultId(publicKeyEcdsa);
-
-                    setState((prevState) => ({
-                      ...prevState,
-                      address: response.address,
-                      vault: vaultInfo,
-                    }));
-
-                    messageAPI.success("Successfully authenticated!");
-                  })
-                  .catch((error) => {
-                    messageAPI.error(error.message || "Authentication failed!");
-                  })
-              );
-            }
-          })
-          .catch((error: Error) => {
-            messageAPI.error(error.message);
-            clear();
-          })
-      )
-      .catch((error: Error) => messageAPI.error(error.message));
-  }, [clear, messageAPI]);
-
-  const disconnect = () => {
-    modalAPI.confirm({
-      title: "Are you sure you want to disconnect?",
-      okText: "Yes",
-      okType: "default",
-      cancelText: "No",
-      onOk() {
-        clear();
-      },
-    });
+    setState((prev) => ({ ...prev, currency }));
   };
 
   const setTheme = (theme: Theme, fromStorage?: boolean) => {
     if (!fromStorage) setThemeStorage(theme);
 
-    setState((prevState) => ({ ...prevState, theme }));
+    setState((prev) => ({ ...prev, theme }));
   };
+
+  useLocalStorageWatcher(storageKeys.currency, () => {
+    setCurrency(getCurrency(), true);
+  });
 
   useLocalStorageWatcher(storageKeys.theme, () => {
     setTheme(getTheme(), true);
   });
 
+  useEffect(() => {
+    fetchBaseValue();
+  }, [currency]);
+
   return (
     <CoreContext.Provider
       value={{
-        address,
-        connect,
-        disconnect,
+        baseValue,
+        currency,
+        currentRoute,
+        setCurrency,
+        setCurrentRoute,
         setTheme,
         theme,
-        vault,
       }}
     >
       {children}
-      {messageHolder}
-      {modalHolder}
     </CoreContext.Provider>
   );
 };

@@ -1,338 +1,430 @@
-import { DatePicker, Select, Table, Tag } from "antd";
-import { TablePaginationConfig } from "antd";
-import { ColumnsType } from "antd/es/table";
-import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import {
+  Form,
+  FormProps,
+  Select,
+  Table,
+  TableProps,
+  theme as antTheme,
+  Tooltip,
+} from "antd";
+import { useResponsive } from "antd-style";
+import { debounce } from "lodash-es";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { EarningsFilters, getEarnings, getEarningsSummary, getPlugins } from "@/api/plugins";
+import { getEarnings, getEarningSummary, getPlugins } from "@/api/portal";
+import { DateView } from "@/components/DateView";
+import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
+import { useFilterParams } from "@/hooks/useFilterParams";
+import { CoinsAddIcon } from "@/icons/CoinsAddIcon";
+import { LineChartOneIcon } from "@/icons/LineChartOneIcon";
+import { NewspaperIcon } from "@/icons/NewspaperIcon";
+import { SquareArrowOutTopLeftIcon } from "@/icons/SquareArrowOutTopLeftIcon";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { formatCurrency, formatDate, truncateAddress } from "@/utils/functions";
-import { EarningsSummary, EarningTransaction, Plugin } from "@/utils/types";
+import { earningStatuses, earningTypes } from "@/utils/constants";
+import {
+  camelCaseToTitle,
+  getExplorerUrl,
+  kebabCaseToTitle,
+  match,
+  toDecimalFormat,
+  toValueFormat,
+} from "@/utils/functions";
+import { Earning, EarningFilters, EarningSummary, Plugin } from "@/utils/types";
 
-const { RangePicker } = DatePicker;
+type StateProps = {
+  loading: boolean;
+  earnings: Earning[];
+  plugins: Plugin[];
+} & Partial<EarningSummary>;
 
 export const EarningsPage = () => {
-  const { vault } = useCore();
+  const [state, setState] = useState<StateProps>({
+    loading: true,
+    earnings: [],
+    plugins: [],
+  });
+  const { loading, earnings, plugins, totalEarnings, totalTransactions } =
+    state;
+  const { token } = antTheme.useToken();
+  const { baseValue, currency } = useCore();
+  const { filters, setFilters } = useFilterParams<EarningFilters>();
+  const { md } = useResponsive();
+  const [form] = Form.useForm<EarningFilters>();
   const colors = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [earnings, setEarnings] = useState<EarningTransaction[]>([]);
-  const [plugins, setPlugins] = useState<Plugin[]>([]);
-  const [summary, setSummary] = useState<EarningsSummary | null>(null);
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
-
-  // Filters
-  const [filters, setFilters] = useState<EarningsFilters>({});
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [earningsResponse, pluginsData, summaryData] = await Promise.all([
-          getEarnings({ ...filters, page, limit: pageSize }),
-          getPlugins(),
-          getEarningsSummary(),
-        ]);
-        setEarnings(earningsResponse.data);
-        setTotal(earningsResponse.total);
-        setPlugins(pluginsData);
-        setSummary(summaryData);
-      } catch (error) {
-        console.error("Failed to fetch earnings:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [filters, page, pageSize]);
-
-  const columns: ColumnsType<EarningTransaction> = [
+  const columns: TableProps<Earning>["columns"] = [
     {
-      title: "Plugin",
       dataIndex: "pluginName",
       key: "pluginName",
-      render: (name: string) => (
-        <Stack $style={{ fontWeight: "500" }}>{name}</Stack>
-      ),
+      title: "Plugin",
     },
     {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-      render: (type: string) => {
-        const typeColors: Record<string, string> = {
-          "per-tx": "blue",
-          once: "green",
-          recurring: "purple",
-        };
+      align: "center",
+      dataIndex: "feeAsset",
+      key: "feeAsset",
+      title: "From",
+      render: (_, { feeAsset }) => {
         return (
-          <Tag color={typeColors[type] || "default"}>
-            {type.replace("-", " ").toUpperCase()}
-          </Tag>
+          <HStack $style={{ justifyContent: "center" }}>
+            <MiddleTruncate $style={{ width: "140px" }}>
+              {feeAsset.addr}
+            </MiddleTruncate>
+          </HStack>
         );
       },
     },
     {
-      title: "Amount",
+      align: "center",
       dataIndex: "amount",
       key: "amount",
-      render: (amount: string, record) => (
-        <Stack $style={{ fontWeight: "600", color: colors.success.toHex() }}>
-          +{formatCurrency(amount, record.fee_asset.decimals)} {record.fee_asset.symbol}
-        </Stack>
-      ),
-    },
-    {
-      title: "From",
-      dataIndex: "fromAddress",
-      key: "fromAddress",
-      render: (address: string) => (
-        <Stack
-          $style={{
-            fontFamily: "monospace",
-            fontSize: "12px",
-            color: colors.textTertiary.toHex(),
-          }}
-        >
-          {truncateAddress(address, 8)}
-        </Stack>
-      ),
-    },
-    {
-      title: "Transaction",
-      dataIndex: "txHash",
-      key: "txHash",
-      render: (hash: string) => (
-        <Stack
-          $style={{
-            fontFamily: "monospace",
-            fontSize: "12px",
-            color: colors.textTertiary.toHex(),
-            maxWidth: "150px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {hash}
-        </Stack>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => {
-        const statusColors: Record<string, string> = {
-          completed: "green",
-          pending: "orange",
-          failed: "red",
-        };
+      title: "Amount",
+      render: (_, { amount, feeAsset }) => {
         return (
-          <Tag color={statusColors[status] || "default"}>
-            {status.toUpperCase()}
-          </Tag>
+          <Stack as="span" $style={{ color: colors.success.toHex() }}>
+            {baseValue ? (
+              `${toValueFormat(
+                toDecimalFormat(amount, baseValue, feeAsset.decimals),
+                currency,
+                feeAsset.decimals,
+              )} ${feeAsset.symbol}`
+            ) : (
+              <Spin size="small" />
+            )}
+          </Stack>
         );
       },
     },
     {
-      title: "Date",
+      align: "center",
+      dataIndex: "type",
+      key: "type",
+      title: "Type",
+      render: (_, { type }) => {
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <Stack
+              as="span"
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.info.toRgba(0.05),
+                borderRadius: "4px",
+                color: colors.info.toHex(),
+                fontSize: "12px",
+                gap: "4px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {kebabCaseToTitle(type)}
+            </Stack>
+          </HStack>
+        );
+      },
+    },
+    {
+      align: "center",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date: string) => (
-        <Stack $style={{ fontSize: "12px", color: colors.textTertiary.toHex() }}>
-          {formatDate(date)}
-        </Stack>
-      ),
+      title: "Created At",
+      render: (_, { createdAt }) => {
+        return <DateView date={createdAt} />;
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "status",
+      key: "status",
+      title: "Status",
+      render: (_, { status }) => {
+        const color = match(status, {
+          failed: () => colors.error,
+          pending: () => colors.warning,
+          completed: () => colors.success,
+        });
+
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <Stack
+              as="span"
+              $style={{
+                alignItems: "center",
+                backgroundColor: color.toRgba(0.05),
+                borderRadius: "4px",
+                color: color.toHex(),
+                fontSize: "12px",
+                gap: "4px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {camelCaseToTitle(status)}
+            </Stack>
+          </HStack>
+        );
+      },
+    },
+    {
+      align: "center",
+      dataIndex: "txHash",
+      key: "txHash",
+      title: "Action",
+      width: 100,
+      render: (_, { txHash, feeAsset }) => {
+        if (!txHash) return "-";
+
+        const explorerUrl = getExplorerUrl(feeAsset.network, "tx", txHash);
+
+        return (
+          <HStack $style={{ gap: "8px", justifyContent: "center" }}>
+            <Tooltip title="Details">
+              <HStack
+                as={Link}
+                to={explorerUrl}
+                target="_blank"
+                $style={{
+                  backgroundColor: colors.bgTertiary.toHex(),
+                  borderRadius: "50%",
+                  padding: "12px",
+                }}
+                $hover={{ color: colors.info.toHex() }}
+              >
+                <SquareArrowOutTopLeftIcon fontSize={16} />
+              </HStack>
+            </Tooltip>
+          </HStack>
+        );
+      },
     },
   ];
 
-  if (!vault) {
-    return (
-      <VStack
-        $style={{
-          alignItems: "center",
-          justifyContent: "center",
-          flex: "1",
-          gap: "16px",
-        }}
-      >
-        <Stack
-          $style={{
-            fontSize: "18px",
-            color: colors.textTertiary.toHex(),
-          }}
-        >
-          Please connect your Vultisig wallet to view your earnings
-        </Stack>
-      </VStack>
-    );
-  }
+  const debouncedHandleFilter = useMemo(
+    () => debounce(setFilters, 500),
+    [setFilters],
+  );
 
-  if (loading) {
-    return <Spin centered />;
-  }
+  const handleFilter: FormProps["onValuesChange"] = (_, values) => {
+    debouncedHandleFilter(values);
+  };
+
+  const fetchEarnings = useEffectEvent(async () => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    form.setFieldsValue(filters);
+
+    const earnings = await getEarnings(filters);
+
+    setState((prev) => ({ ...prev, loading: false, earnings }));
+  });
+
+  const fetchData = useEffectEvent(async () => {
+    const { totalEarnings, totalTransactions } = await getEarningSummary();
+    const plugins = await getPlugins();
+
+    setState((prev) => ({
+      ...prev,
+      plugins,
+      totalEarnings,
+      totalTransactions,
+    }));
+  });
+
+  useEffect(() => {
+    return () => debouncedHandleFilter.cancel();
+  }, [debouncedHandleFilter]);
+
+  useEffect(() => {
+    fetchEarnings();
+  }, [filters]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const stats = [
+    {
+      color: colors.textPrimary,
+      icon: CoinsAddIcon,
+      label: "Total Revenue",
+      value:
+        baseValue && totalEarnings ? (
+          toValueFormat(
+            toDecimalFormat(
+              totalEarnings.amount,
+              baseValue,
+              totalEarnings.feeAsset.decimals,
+            ),
+            currency,
+            totalEarnings.feeAsset.decimals,
+          )
+        ) : (
+          <Spin />
+        ),
+    },
+    {
+      color: colors.success,
+      icon: LineChartOneIcon,
+      label: "Revenue Growth",
+      value: "0%",
+    },
+    {
+      color: colors.textPrimary,
+      icon: NewspaperIcon,
+      label: "Total Transactions",
+      value: totalTransactions === undefined ? <Spin /> : totalTransactions,
+    },
+  ];
 
   return (
-    <VStack $style={{ gap: "24px" }}>
-      {/* Header */}
-      <VStack $style={{ gap: "4px" }}>
-        <Stack $style={{ fontSize: "24px", fontWeight: "600" }}>
+    <VStack
+      $style={{
+        gap: "16px",
+        maxWidth: `${token.screenXL}px`,
+        padding: "16px",
+        width: "100%",
+      }}
+    >
+      <VStack $style={{ gap: "2px" }}>
+        <Stack as="span" $style={{ fontSize: "22px", lineHeight: "24px" }}>
           Earnings
         </Stack>
-        <Stack $style={{ color: colors.textTertiary.toHex() }}>
+        <Stack
+          as="span"
+          $style={{
+            color: colors.textTertiary.toHex(),
+            fontSize: "13px",
+            lineHeight: "18px",
+          }}
+        >
           Track fee transactions from your plugins
         </Stack>
       </VStack>
-
-      {/* Summary Cards */}
-      {summary && (
-        <HStack $style={{ gap: "16px" }}>
-          <VStack
-            $style={{
-              backgroundColor: colors.bgSecondary.toHex(),
-              borderRadius: "12px",
-              border: `1px solid ${colors.borderLight.toHex()}`,
-              padding: "20px 24px",
-              flex: "1",
-            }}
-          >
-            <Stack $style={{ fontSize: "13px", color: colors.textTertiary.toHex() }}>
-              Total Earnings
-            </Stack>
-            <Stack $style={{ fontSize: "28px", fontWeight: "600", color: colors.success.toHex() }}>
-              {formatCurrency(summary.totalEarnings.amount, summary.totalEarnings.fee_asset.decimals)}
-            </Stack>
-          </VStack>
-
-          <VStack
-            $style={{
-              backgroundColor: colors.bgSecondary.toHex(),
-              borderRadius: "12px",
-              border: `1px solid ${colors.borderLight.toHex()}`,
-              padding: "20px 24px",
-              flex: "1",
-            }}
-          >
-            <Stack $style={{ fontSize: "13px", color: colors.textTertiary.toHex() }}>
-              Total Transactions
-            </Stack>
-            <Stack $style={{ fontSize: "28px", fontWeight: "600" }}>
-              {summary.totalTransactions}
-            </Stack>
-          </VStack>
-
-          <VStack
-            $style={{
-              backgroundColor: colors.bgSecondary.toHex(),
-              borderRadius: "12px",
-              border: `1px solid ${colors.borderLight.toHex()}`,
-              padding: "20px 24px",
-              flex: "1",
-            }}
-          >
-            <Stack $style={{ fontSize: "13px", color: colors.textTertiary.toHex() }}>
-              Active Plugins
-            </Stack>
-            <Stack $style={{ fontSize: "28px", fontWeight: "600" }}>
-              {Object.keys(summary.earningsByPlugin).length}
-            </Stack>
-          </VStack>
-        </HStack>
-      )}
-
-      {/* Filters */}
-      <HStack
+      <Stack
         $style={{
-          backgroundColor: colors.bgSecondary.toHex(),
-          borderRadius: "12px",
-          border: `1px solid ${colors.borderLight.toHex()}`,
-          padding: "16px 20px",
+          display: "grid",
           gap: "16px",
-          alignItems: "center",
+          gridTemplateColumns: md ? "repeat(3, 1fr)" : "repeat(1, 1fr)",
         }}
       >
-        <Stack $style={{ fontSize: "14px", fontWeight: "500" }}>Filters:</Stack>
-
-        <Select
-          allowClear
-          placeholder="All Plugins"
-          style={{ width: 200 }}
-          onChange={(value) => setFilters((prev) => ({ ...prev, pluginId: value }))}
-          options={plugins.map((p) => ({ value: p.id, label: p.title }))}
-        />
-
-        <Select
-          allowClear
-          placeholder="All Types"
-          style={{ width: 150 }}
-          onChange={(value) => setFilters((prev) => ({ ...prev, type: value }))}
-          options={[
-            { value: "per-tx", label: "Per Transaction" },
-            { value: "once", label: "One Time" },
-            { value: "recurring", label: "Recurring" },
-          ]}
-        />
-
-        <Select
-          allowClear
-          placeholder="All Statuses"
-          style={{ width: 150 }}
-          onChange={(value) => setFilters((prev) => ({ ...prev, status: value }))}
-          options={[
-            { value: "completed", label: "Completed" },
-            { value: "pending", label: "Pending" },
-            { value: "failed", label: "Failed" },
-          ]}
-        />
-
-        <RangePicker
-          onChange={(dates) => {
-            if (dates && dates[0] && dates[1]) {
-              setFilters((prev) => ({
-                ...prev,
-                dateFrom: dates[0]?.toISOString(),
-                dateTo: dates[1]?.toISOString(),
-              }));
-            } else {
-              setFilters((prev) => ({
-                ...prev,
-                dateFrom: undefined,
-                dateTo: undefined,
-              }));
-            }
+        {stats.map(({ color, icon, label, value }, index) => (
+          <HStack
+            as="span"
+            key={index}
+            $style={{
+              backgroundColor: colors.bgTertiary.toHex(),
+              borderColor: colors.borderLight.toHex(),
+              borderRadius: "12px",
+              borderStyle: "solid",
+              borderWidth: "1px",
+              gap: "20px",
+              justifyContent: "space-between",
+              padding: "20px",
+            }}
+          >
+            <VStack $style={{ gap: "60px" }}>
+              <Stack
+                as="span"
+                $style={{
+                  color: colors.textSecondary.toHex(),
+                  fontSize: "14px",
+                  lineHeight: "18px",
+                }}
+              >
+                {label}
+              </Stack>
+              <Stack
+                as="span"
+                $style={{
+                  color: color.toHex(),
+                  fontSize: "36px",
+                  lineHeight: "38px",
+                }}
+              >
+                {value}
+              </Stack>
+            </VStack>
+            <VStack
+              $style={{
+                alignItems: "center",
+                backgroundColor: colors.textPrimary.toRgba(0.03),
+                borderRadius: "12px",
+                height: "60px",
+                justifyContent: "center",
+                width: "60px",
+              }}
+            >
+              <Stack as={icon} $style={{ fontSize: "24px" }} />
+            </VStack>
+          </HStack>
+        ))}
+      </Stack>
+      <HStack
+        $style={{ alignItems: "center", justifyContent: "space-between" }}
+      >
+        <Stack
+          as="span"
+          $style={{
+            fontSize: "22px",
+            lineHeight: "24px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
-          presets={[
-            { label: "Last 7 Days", value: [dayjs().subtract(7, "day"), dayjs()] },
-            { label: "Last 30 Days", value: [dayjs().subtract(30, "day"), dayjs()] },
-            { label: "Last 90 Days", value: [dayjs().subtract(90, "day"), dayjs()] },
-          ]}
-        />
+        >
+          Transactions
+        </Stack>
+        <Form<EarningFilters> form={form} onValuesChange={handleFilter}>
+          <HStack $style={{ gap: "16px" }}>
+            <Form.Item<EarningFilters> name="pluginId" noStyle>
+              <Select
+                options={plugins.map(({ id, title }) => ({
+                  label: title,
+                  value: id,
+                }))}
+                placeholder="Plugin"
+                styles={{
+                  popup: { root: { width: 236 } },
+                  root: { paddingBlock: 8, width: 110 },
+                }}
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item<EarningFilters> name="status" noStyle>
+              <Select
+                options={earningStatuses.map((status) => ({
+                  label: camelCaseToTitle(status),
+                  value: status,
+                }))}
+                placeholder="Status"
+                styles={{ root: { paddingBlock: 8, width: 110 } }}
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item<EarningFilters> name="type" noStyle>
+              <Select
+                options={earningTypes.map((type) => ({
+                  label: kebabCaseToTitle(type),
+                  value: type,
+                }))}
+                placeholder="Type"
+                styles={{ root: { paddingBlock: 8, width: 110 } }}
+                allowClear
+              />
+            </Form.Item>
+          </HStack>
+        </Form>
       </HStack>
-
-      {/* Earnings Table */}
-      <Table
+      <Table<Earning>
         columns={columns}
         dataSource={earnings}
+        loading={loading}
+        pagination={false}
         rowKey="id"
-        pagination={{
-          current: page,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          showTotal: (t: number) => `Total ${t} transactions`,
-          pageSizeOptions: [10, 20, 50],
-        }}
-        onChange={(pagination: TablePaginationConfig) => {
-          setPage(pagination.current ?? 1);
-          setPageSize(pagination.pageSize ?? 10);
-        }}
-        style={{ width: "100%" }}
       />
     </VStack>
   );

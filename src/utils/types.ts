@@ -1,111 +1,100 @@
-import type * as CSS from "csstype";
+import { Chain } from "@/utils/chain";
+import { earningStatuses, earningTypes } from "@/utils/constants";
 
-export type CSSProperties = CSS.Properties<string>;
+export type AuthToken = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type Earning = {
+  amount: string;
+  createdAt: string;
+  feeAsset: {
+    addr: string;
+    decimals: number;
+    network: Chain;
+    symbol: string;
+  };
+  fromAddress: string;
+  id: string;
+  pluginId: string;
+  pluginName: string;
+  status: (typeof earningStatuses)[number];
+  txHash: string;
+  type: (typeof earningTypes)[number];
+};
+
+export type EarningFilters = Partial<
+  Pick<Earning, "pluginId" | "status" | "type">
+>;
+
+export type EarningSummary = {
+  earningsByPlugin: Record<string, Pick<Earning, "amount" | "feeAsset">>;
+  totalEarnings: Pick<Earning, "amount" | "feeAsset">;
+  totalTransactions: number;
+};
+
+export type Image = {
+  contentType: ImageMime;
+  data: string;
+  filename: string;
+  id: string;
+  imageOrder: number;
+  type: "logo" | "media" | "thumbnail";
+  url: string;
+};
+
+export type ImageMime = "image/jpeg" | "image/png";
 
 export type Plugin = {
-  id: string;
-  title: string;
-  description: string;
-  serverEndpoint: string;
   category: string;
   createdAt: string;
-  updatedAt: string;
+  description: string;
+  id: string;
   logoUrl?: string;
-  thumbnailUrl?: string;
   publicKey?: string;
-};
-
-export type PluginPricing = {
-  id: string;
-  pluginId: string;
-  type: "per-tx" | "once" | "recurring";
-  frequency: string | null;
-  amount: string;
-  fee_asset: FeeAsset;
-  metric: string;
-};
-
-export type PluginPolicy = {
-  id: string;
-  publicKey: string;
-  pluginId: string;
-  pluginVersion: string;
-  policyVersion: number;
-  signature: string;
-  recipe: string;
-  active: boolean;
-};
-
-export type PluginApiKey = {
-  id: string;
-  pluginId: string;
-  apikey: string;
-  createdAt: string;
-  expiresAt: string | null;
-  status: number;
-};
-
-export type FeeAsset = {
-  symbol: string;
-  addr: string;
-  decimals: number;
-  network: string;
-};
-
-export type EarningTransaction = {
-  id: string;
-  pluginId: string;
-  pluginName: string;
-  amount: string;
-  fee_asset: FeeAsset;
-  type: "per-tx" | "once" | "recurring";
-  createdAt: string;
-  fromAddress: string;
-  txHash: string;
-  status: "pending" | "completed" | "failed";
-};
-
-export type PluginEarning = {
-  amount: string;
-  fee_asset: FeeAsset;
-};
-
-export type EarningsSummary = {
-  totalEarnings: PluginEarning;
-  totalTransactions: number;
-  earningsByPlugin: Record<string, PluginEarning>;
-};
-
-export type Tag = {
-  id: string;
-  name: string;
-};
-
-export type Review = {
-  id: string;
-  pluginId: string;
-  publicKey: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
+  serverEndpoint: string;
+  thumbnailUrl?: string;
+  title: string;
   updatedAt: string;
 };
 
-export type TeamMemberRole = "admin" | "staff" | "editor" | "viewer";
+export type Proposal = {
+  banner?: string; // Only for form submission, not returned by API
+  category: string;
+  contactEmail: string;
+  createdAt: string;
+  images: Image[];
+  logo?: string; // Only for form submission, not returned by API
+  media?: string[]; // Only for form submission, not returned by API
+  notes: string;
+  pluginId: string;
+  pricingModel: "free" | "once" | "per-tx";
+  serverEndpoint: string;
+  shortDescription: string;
+  status: "active" | "submitted";
+  supportedChains: Chain[];
+  title: string;
+  thumbnail?: string; // Only for form submission, not returned by API
+  updatedAt: string;
+};
 
-export type TeamMember = {
-  publicKey: string;
-  role: TeamMemberRole;
-  addedVia: string;
+export type Member = {
   addedBy?: string;
+  addedVia: string;
   createdAt: string;
   isCurrentUser: boolean;
+  publicKey: string;
+  role: "admin" | "editor" | "staff" | "viewer";
 };
 
-export type InviteInfo = {
-  pluginId: string;
-  pluginName: string;
-  role: TeamMemberRole;
-  invitedBy: string;
-  expiresAt: string;
+export type Vault = {
+  hexChainCode: string;
+  isFastVault: boolean;
+  localPartyId: string;
+  name: string;
+  parties: string[];
+  publicKeyEcdsa: string;
+  publicKeyEddsa: string;
+  uid: string;
 };
