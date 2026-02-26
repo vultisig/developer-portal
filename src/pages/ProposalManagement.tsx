@@ -258,6 +258,18 @@ export const ProposalManagementPage = () => {
               layout="vertical"
               onFinish={handleFinish}
               requiredMark={false}
+              onFinishFailed={() => {
+                setTimeout(() => {
+                  const errorEl = document.querySelector(
+                    ".ant-form-item-has-error",
+                  );
+
+                  errorEl?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+                });
+              }}
             >
               <Stack $style={{ display: step === 1 ? "block" : "none" }}>
                 <Form.Item<Proposal>
@@ -351,6 +363,10 @@ export const ProposalManagementPage = () => {
                     {
                       required: step > 1,
                       message: "Please input your plugin server endpoint!",
+                    },
+                    {
+                      type: "url",
+                      message: "Please input a valid URL!",
                     },
                   ]}
                 >
