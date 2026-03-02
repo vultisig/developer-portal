@@ -87,6 +87,25 @@ export const getMembers = async (pluginId: string): Promise<Member[]> => {
   return apiClient.get<Member[]>(`/plugins/${pluginId}/team`);
 };
 
+export const updatePlugin = async (
+  pluginId: string,
+  data: {
+    title: string;
+    description: string;
+    serverEndpoint: string;
+    payoutAddress: string;
+    signature: string;
+    signedMessage: object;
+  },
+): Promise<void> => {
+  const { signedMessage, ...rest } = data;
+
+  return apiClient.put(`/plugins/${pluginId}`, {
+    ...toSnakeCase(rest),
+    signed_message: signedMessage,
+  });
+};
+
 export const validatePluginId = async (pluginId: string): Promise<boolean> => {
   try {
     const { available } = await apiClient.get<{ available: boolean }>(
