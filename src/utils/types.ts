@@ -52,6 +52,7 @@ export type Plugin = {
   description: string;
   id: string;
   logoUrl?: string;
+  payoutAddress: string;
   publicKey?: string;
   serverEndpoint: string;
   thumbnailUrl?: string;
