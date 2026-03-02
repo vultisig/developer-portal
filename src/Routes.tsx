@@ -15,6 +15,7 @@ import { EarningsPage } from "@/pages/Earnings";
 import { InternalErrorPage } from "@/pages/InternalError";
 import { NotFoundPage } from "@/pages/NotFound";
 import { PluginEarningsPage } from "@/pages/PluginEarnings";
+import { PluginEditPage } from "@/pages/PluginEdit";
 import { PluginMembersPage } from "@/pages/PluginMembers";
 import { PluginsPage } from "@/pages/Plugins";
 import { ProjectCategoriesPage } from "@/pages/ProjectCategories";
@@ -68,6 +69,10 @@ export const Routes = () => {
         {
           path: routeTree.pluginEarnings.path,
           element: setCurrentRoute("plugins", <PluginEarningsPage />),
+        },
+        {
+          path: routeTree.pluginUpdate.path,
+          element: setCurrentRoute("plugins", <PluginEditPage />),
         },
         {
           path: routeTree.pluginMembers.path,
