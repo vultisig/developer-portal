@@ -74,3 +74,27 @@ export const personalSign = async (
 
   return signature as string;
 };
+
+export const signTypedData = async (
+  address: string,
+  typedData: {
+    types: Record<string, Array<{ name: string; type: string }>>;
+    primaryType: string;
+    domain: Record<string, unknown>;
+    message: Record<string, unknown>;
+  },
+): Promise<string> => {
+  const signature = await window.vultisig.ethereum.request<string>({
+    method: "eth_signTypedData_v4",
+    params: [address, JSON.stringify(typedData)],
+  });
+
+  if (
+    typeof signature === "object" &&
+    (signature as { error?: string })?.error
+  ) {
+    throw new Error((signature as { error: string }).error);
+  }
+
+  return signature;
+};
