@@ -84,6 +84,11 @@ export type PluginProposal = Pick<
   thumbnail?: string; // Only for form submission, not returned by API
 };
 
+export type PluginRole = {
+  canEdit: boolean;
+  role: "admin" | "staff" | "editor" | "viewer";
+};
+
 export type PluginUpdate = Pick<
   Plugin,
   "description" | "payoutAddress" | "serverEndpoint" | "title"

@@ -1,5 +1,6 @@
 export type RouteKey =
   | "account"
+  | "adminProposals"
   | "earnings"
   | "notFound"
   | "plugins"
@@ -15,6 +16,7 @@ export type RouteKey =
 
 export const routeTree = {
   account: { path: "/account" },
+  adminProposals: { path: "/admin/proposals" },
   earnings: { path: "/earnings" },
   notFound: { path: "*" },
   plugins: { path: "/plugins" },

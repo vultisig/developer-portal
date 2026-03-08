@@ -7,8 +7,10 @@ import { useTheme } from "styled-components";
 import { CurrencyModal } from "@/components/CurrencyModal";
 import { useApp } from "@/hooks/useApp";
 import { useCore } from "@/hooks/useCore";
+import { useIsApprover } from "@/hooks/useIsApprover";
 import { ArrowBoxLeftIcon } from "@/icons/ArrowBoxLeftIcon";
 import { ArrowBoxRightIcon } from "@/icons/ArrowBoxRightIcon";
+import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { DotGridVerticalIcon } from "@/icons/DotGridVerticalIcon";
 import { MoonIcon } from "@/icons/MoonIcon";
@@ -25,6 +27,7 @@ import { routeTree } from "@/utils/routes";
 export const DefaultLayout = () => {
   const { connect, disconnect, vault } = useApp();
   const { currency, currentRoute, setTheme, theme } = useCore();
+  const { isApprover } = useIsApprover();
   const { lg } = useResponsive();
   const { token } = antTheme.useToken();
   const navigate = useNavigate();
@@ -56,8 +59,18 @@ export const DefaultLayout = () => {
         label: "Earnings",
         path: routeTree.earnings.path,
       },
+      ...(isApprover
+        ? [
+            {
+              icon: CheckmarkIcon,
+              isActive: currentRoute === "adminProposals",
+              label: "Review",
+              path: routeTree.adminProposals.path,
+            },
+          ]
+        : []),
     ],
-    [currentRoute],
+    [currentRoute, isApprover],
   );
 
   const sideMenu: MenuProps["items"] = [

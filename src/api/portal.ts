@@ -10,6 +10,7 @@ import {
   Member,
   MemberInvitation,
   Plugin,
+  PluginRole,
   PluginUpdate,
   PluginProposal,
 } from "@/utils/types";
@@ -33,16 +34,16 @@ export const delAuthToken = async (token: string): Promise<void> => {
   return apiClient.del(`/auth/tokens/${token_id}`);
 };
 
-// export const delMember = async (
-//   pluginId: string,
-//   address: string,
-// ): Promise<string> => {
-//   const { message } = await apiClient.del<{ message: string }>(
-//     `/plugins/${pluginId}/team/${encodeURIComponent(address)}`,
-//   );
+export const delMember = async (
+  pluginId: string,
+  publicKey: string,
+): Promise<string> => {
+  const { message } = await apiClient.del<{ message: string }>(
+    `/plugins/${pluginId}/team/${encodeURIComponent(publicKey)}`,
+  );
 
-//   return message;
-// };
+  return message;
+};
 
 export const getAuthToken = async (data: {
   chainCodeHex: string;
@@ -100,6 +101,22 @@ export const updatePlugin = async ({
     signature,
     signed_message: signedMessage,
   });
+};
+
+export const getMyRole = async (pluginId: string): Promise<PluginRole> => {
+  return apiClient.get<PluginRole>(`/plugins/${pluginId}/my-role`);
+};
+
+export const getAdminProposals = async (): Promise<PluginProposal[]> => {
+  return apiClient.get<PluginProposal[]>("/admin/plugin-proposals");
+};
+
+export const approveProposal = async (proposalId: string): Promise<void> => {
+  return apiClient.post(`/admin/plugin-proposals/${proposalId}/approve`);
+};
+
+export const publishProposal = async (proposalId: string): Promise<void> => {
+  return apiClient.post(`/admin/plugin-proposals/${proposalId}/publish`);
 };
 
 export const validatePluginId = async (pluginId: string): Promise<boolean> => {
