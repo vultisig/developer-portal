@@ -20,67 +20,19 @@ import { PluginProposal } from "@/utils/types";
 type StateProps = {
   loading: boolean;
   proposals: PluginProposal[];
-  refetch: number;
 };
 
 export const AdminProposalsPage = () => {
   const [state, setState] = useState<StateProps>({
     loading: true,
     proposals: [],
-    refetch: 0,
   });
-  const { loading, proposals, refetch } = state;
+  const { loading, proposals } = state;
   const { token } = antTheme.useToken();
   const { md } = useResponsive();
-  const { isApprover, loading: approverLoading } = useIsApprover();
+  const isApprover = useIsApprover();
   const navigate = useNavigate();
   const colors = useTheme();
-
-  const triggerRefetch = () =>
-    setState((prev) => ({ ...prev, refetch: prev.refetch + 1 }));
-
-  const handleApprove = (proposalId: string, publicKey: string) => {
-    Modal.confirm({
-      title: "Approve Proposal?",
-      content: "This will approve the plugin proposal.",
-      okText: "Approve",
-      cancelText: "Cancel",
-      onOk: async () => {
-        try {
-          await approveProposal(proposalId, publicKey);
-          message.success("Proposal approved");
-          triggerRefetch();
-        } catch (error) {
-          if (error instanceof Error) {
-            message.error(error.message);
-          } else {
-            message.error("Failed to approve proposal");
-          }
-        }
-      },
-    });
-  };
-
-  const handlePublish = (proposalId: string) => {
-    Modal.confirm({
-      title: "Publish Proposal?",
-      content: "This will publish the plugin and make it live.",
-      okText: "Publish",
-      cancelText: "Cancel",
-      onOk: async () => {
-        try {
-          await publishProposal(proposalId);
-          message.success("Proposal published");
-          triggerRefetch();
-        } catch (error) {
-          const msg =
-            error instanceof Error ? error.message : "Failed to publish proposal";
-
-          message.error(msg);
-        }
-      },
-    });
-  };
 
   const columns: TableProps<PluginProposal>["columns"] = [
     {
@@ -210,20 +162,15 @@ export const AdminProposalsPage = () => {
         }
 
         return (
-          <Stack
-            as="span"
-            $style={{ color: colors.textTertiary.toHex() }}
-          >
-            {status === "listed" || status === "active"
-              ? "Published"
-              : status}
+          <Stack as="span" $style={{ color: colors.textTertiary.toHex() }}>
+            {status === "listed" || status === "active" ? "Published" : status}
           </Stack>
         );
       },
     },
   ];
 
-  const fetchProposals = useEffectEvent(async () => {
+  const fetchProposals = async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
     try {
@@ -233,22 +180,73 @@ export const AdminProposalsPage = () => {
     } catch {
       setState((prev) => ({ ...prev, loading: false, proposals: [] }));
     }
-  });
+  };
+
+  const fetchProposalsEvent = useEffectEvent(fetchProposals);
+
+  const handleApprove = (proposalId: string, publicKey: string) => {
+    Modal.confirm({
+      title: "Approve Proposal?",
+      content: "This will approve the plugin proposal.",
+      okText: "Approve",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await approveProposal(proposalId, publicKey);
+
+          message.success("Proposal approved");
+
+          fetchProposals();
+        } catch (error) {
+          message.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to approve proposal",
+          );
+        }
+      },
+    });
+  };
+
+  const handlePublish = (proposalId: string) => {
+    Modal.confirm({
+      title: "Publish Proposal?",
+      content: "This will publish the plugin and make it live.",
+      okText: "Publish",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await publishProposal(proposalId);
+
+          message.success("Proposal published");
+
+          fetchProposals();
+        } catch (error) {
+          message.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to publish proposal",
+          );
+        }
+      },
+    });
+  };
 
   useEffect(() => {
-    if (!approverLoading && isApprover) fetchProposals();
-  }, [approverLoading, isApprover, refetch]);
+    if (isApprover === undefined) return;
 
-  useEffect(() => {
-    if (!approverLoading && !isApprover) {
+    if (!isApprover) {
       message.error("You don't have permission to access this page");
+
       navigate(routeTree.root.path, { replace: true });
+
+      return;
     }
-  }, [approverLoading, isApprover, navigate]);
 
-  if (approverLoading) return <Spin centered />;
+    fetchProposalsEvent();
+  }, [isApprover, navigate]);
 
-  if (!isApprover) return null;
+  if (!isApprover) return <Spin centered />;
 
   return (
     <VStack

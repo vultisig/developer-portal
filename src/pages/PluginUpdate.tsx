@@ -27,14 +27,14 @@ export const PluginUpdatePage = () => {
   const { token } = antTheme.useToken();
   const { onFinishFailed } = useAntd();
   const { pluginId = "" } = useParams();
+  const { canEdit, role } = usePluginRole(pluginId);
   const [form] = Form.useForm<PluginUpdate>();
-  const { canEdit, isAdmin, loading: roleLoading, role } = usePluginRole(pluginId);
   const goBack = useGoBack();
   const navigate = useNavigate();
   const colors = useTheme();
 
   const canEditEndpoint = role === "admin" || role === "staff";
-  const canEditPayout = isAdmin;
+  const canEditPayout = role === "admin";
 
   const fetchPlugin = useEffectEvent(async () => {
     try {
@@ -114,19 +114,20 @@ export const PluginUpdatePage = () => {
   };
 
   useEffect(() => {
-    fetchPlugin();
-  }, [pluginId]);
+    if (canEdit === undefined) return;
 
-  useEffect(() => {
-    if (!roleLoading && !canEdit) {
+    if (canEdit === false) {
       message.error("You don't have permission to edit this plugin");
+
       navigate(routeTree.plugins.path, { replace: true });
+
+      return;
     }
-  }, [roleLoading, canEdit, navigate]);
 
-  if (!plugin || roleLoading) return <Spin centered />;
+    fetchPlugin();
+  }, [navigate, canEdit]);
 
-  if (!canEdit) return null;
+  if (!plugin || !role) return <Spin centered />;
 
   return (
     <VStack
@@ -232,17 +233,15 @@ export const PluginUpdatePage = () => {
             <Form.Item<PluginUpdate>
               label="Server Endpoint"
               name="serverEndpoint"
-              tooltip={
-                !canEditEndpoint
-                  ? "Only admins can modify the server endpoint"
-                  : undefined
-              }
               rules={[
                 {
                   required: true,
                   message: "Please input your server endpoint!",
                 },
               ]}
+              {...(canEditEndpoint === false
+                ? { tooltip: "Only admins can modify the server endpoint" }
+                : {})}
             >
               <Input
                 disabled={!canEditEndpoint}
@@ -252,17 +251,15 @@ export const PluginUpdatePage = () => {
             <Form.Item<PluginUpdate>
               label="Payout Address"
               name="payoutAddress"
-              tooltip={
-                !canEditPayout
-                  ? "Only admins can modify the payout address"
-                  : undefined
-              }
               rules={[
                 {
                   pattern: /^0x[0-9a-fA-F]{40}$/,
                   message: "Please enter a valid Ethereum address!",
                 },
               ]}
+              {...(canEditPayout === false
+                ? { tooltip: "Only admins can modify the payout address" }
+                : {})}
             >
               <Input disabled={!canEditPayout} placeholder="0x..." />
             </Form.Item>

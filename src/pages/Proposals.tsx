@@ -131,6 +131,70 @@ export const ProposalsPage = () => {
                 </Stack>
               </HStack>
             ),
+            approved: () => (
+              <HStack
+                as="span"
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.info.toRgba(0.05),
+                  borderRadius: "4px",
+                  gap: "4px",
+                  padding: "0 8px",
+                }}
+              >
+                <Stack
+                  as="span"
+                  $style={{
+                    backgroundColor: colors.info.toHex(),
+                    borderRadius: "50%",
+                    height: "6px",
+                    width: "6px",
+                  }}
+                />
+                <Stack
+                  as="span"
+                  $style={{
+                    color: colors.info.toHex(),
+                    fontSize: "12px",
+                    lineHeight: "24px",
+                  }}
+                >
+                  Approved
+                </Stack>
+              </HStack>
+            ),
+            listed: () => (
+              <HStack
+                as="span"
+                $style={{
+                  alignItems: "center",
+                  backgroundColor: colors.info.toRgba(0.05),
+                  borderRadius: "4px",
+                  gap: "4px",
+                  padding: "0 8px",
+                }}
+              >
+                <Stack
+                  as="span"
+                  $style={{
+                    backgroundColor: colors.info.toHex(),
+                    borderRadius: "50%",
+                    height: "6px",
+                    width: "6px",
+                  }}
+                />
+                <Stack
+                  as="span"
+                  $style={{
+                    color: colors.info.toHex(),
+                    fontSize: "12px",
+                    lineHeight: "24px",
+                  }}
+                >
+                  Listed
+                </Stack>
+              </HStack>
+            ),
             submitted: () => (
               <HStack
                 as="span"

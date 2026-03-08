@@ -56,9 +56,9 @@ export const PluginEarningsPage = () => {
   const { baseValue, currency } = useCore();
   const { filters, setFilters } = useFilterParams<EarningFilters>();
   const { pluginId = "" } = useParams();
+  const { canEdit, role } = usePluginRole(pluginId);
   const { md } = useResponsive();
   const [form] = Form.useForm<EarningFilters>();
-  const { canEdit, loading: roleLoading, role } = usePluginRole(pluginId);
   const navigate = useNavigate();
   const colors = useTheme();
 
@@ -239,43 +239,20 @@ export const PluginEarningsPage = () => {
   }, [filters, plugin]);
 
   useEffect(() => {
-    fetchPlugin();
-  }, [pluginId]);
+    if (!role) return;
 
-  useEffect(() => {
-    if (!roleLoading && role === "viewer") {
+    if (role === "viewer") {
       message.error("Viewers don't have access to earnings");
+
       navigate(routeTree.plugins.path, { replace: true });
+
+      return;
     }
-  }, [roleLoading, role, navigate]);
 
-  const stats = [
-    {
-      color: colors.info,
-      icon: ChartSixIcon,
-      label: "Total Revenue",
-      unit: "All time",
-      value: "0",
-    },
-    {
-      color: colors.success,
-      icon: PeopleAddedIcon,
-      label: "Active Users",
-      unit: "Last 30 days",
-      value: "0",
-    },
-    {
-      color: colors.accentFour,
-      icon: NewspaperIcon,
-      label: "Transactions",
-      unit: "Last 30 days",
-      value: earnings.length,
-    },
-  ];
+    fetchPlugin();
+  }, [navigate, role]);
 
-  if (!plugin || roleLoading) return <Spin centered />;
-
-  if (role === "viewer") return null;
+  if (!plugin || !role || role === "viewer") return <Spin centered />;
 
   return (
     <VStack
@@ -330,7 +307,29 @@ export const PluginEarningsPage = () => {
           padding: "20px",
         }}
       >
-        {stats.map(({ color, icon, label, unit, value }, index) => (
+        {[
+          {
+            color: colors.info,
+            icon: ChartSixIcon,
+            label: "Total Revenue",
+            unit: "All time",
+            value: "0",
+          },
+          {
+            color: colors.success,
+            icon: PeopleAddedIcon,
+            label: "Active Users",
+            unit: "Last 30 days",
+            value: "0",
+          },
+          {
+            color: colors.accentFour,
+            icon: NewspaperIcon,
+            label: "Transactions",
+            unit: "Last 30 days",
+            value: earnings.length,
+          },
+        ].map(({ color, icon, label, unit, value }, index) => (
           <HStack
             as="span"
             key={index}

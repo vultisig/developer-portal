@@ -1,5 +1,6 @@
 import { Chain } from "@/utils/chain";
-import { earningStatuses, earningTypes, memberRoles } from "@/utils/constants";
+import { earningStatuses, earningTypes } from "@/utils/constants";
+import { Role } from "@/utils/role";
 
 export type AuthToken = {
   accessToken: string;
@@ -52,6 +53,21 @@ export type Image = {
 
 export type ImageMime = "image/jpeg" | "image/png";
 
+export type Member = {
+  addedBy?: string;
+  addedVia: string;
+  createdAt: string;
+  isCurrentUser: boolean;
+  publicKey: string;
+  role: Role;
+};
+
+export type MemberInvitation = {
+  link: string;
+  expiresAt: string;
+  role: Role;
+};
+
 export type Plugin = {
   category: string;
   createdAt: string;
@@ -87,7 +103,7 @@ export type PluginProposal = Pick<
 
 export type PluginRole = {
   canEdit: boolean;
-  role: "admin" | "staff" | "editor" | "viewer";
+  role: Role;
 };
 
 export type PluginUpdate = Pick<
@@ -101,21 +117,6 @@ export type PluginUpdateMessage = {
   signer: string;
   timestamp: number;
   updates: FieldUpdate[];
-};
-
-export type Member = {
-  addedBy?: string;
-  addedVia: string;
-  createdAt: string;
-  isCurrentUser: boolean;
-  publicKey: string;
-  role: "admin" | "staff" | (typeof memberRoles)[number];
-};
-
-export type MemberInvitation = {
-  link: string;
-  expiresAt: string;
-  role: Member["role"];
 };
 
 export type Vault = {

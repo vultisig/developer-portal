@@ -1,42 +1,24 @@
 import { useEffect, useEffectEvent, useState } from "react";
 
-import { getMyRole } from "@/api/portal";
+import { getPluginRole } from "@/api/portal";
 import { PluginRole } from "@/utils/types";
 
-type UsePluginRoleResult = PluginRole & {
-  isAdmin: boolean;
-  isStaff: boolean;
-  loading: boolean;
-};
-
-export const usePluginRole = (pluginId: string): UsePluginRoleResult => {
-  const [state, setState] = useState<
-    Partial<PluginRole> & { loading: boolean }
-  >({ loading: true });
+export const usePluginRole = (pluginId: string) => {
+  const [state, setState] = useState<Partial<PluginRole>>({});
 
   const fetchRole = useEffectEvent(async () => {
-    setState((prev) => ({ ...prev, loading: true }));
+    setState({});
 
-    try {
-      const role = await getMyRole(pluginId);
+    const { canEdit, role } = await getPluginRole(pluginId);
 
-      setState({ ...role, loading: false });
-    } catch {
-      setState({ role: "viewer", canEdit: false, loading: false });
-    }
+    setState({ canEdit, role });
   });
 
   useEffect(() => {
-    if (pluginId) fetchRole();
+    if (!pluginId) return;
+
+    fetchRole();
   }, [pluginId]);
 
-  const role = state.role ?? "viewer";
-
-  return {
-    canEdit: state.canEdit ?? false,
-    isAdmin: role === "admin",
-    isStaff: role === "staff",
-    loading: state.loading,
-    role,
-  };
+  return state;
 };

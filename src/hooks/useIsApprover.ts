@@ -2,16 +2,18 @@ import { useEffect, useEffectEvent, useState } from "react";
 
 import { getAdminProposals } from "@/api/portal";
 
-export const useIsApprover = (): { isApprover: boolean; loading: boolean } => {
-  const [state, setState] = useState({ isApprover: false, loading: true });
+export const useIsApprover = () => {
+  const [isApprover, setIsApprover] = useState<boolean | undefined>(undefined);
 
   const checkApprover = useEffectEvent(async () => {
+    setIsApprover(undefined);
+
     try {
       await getAdminProposals();
 
-      setState({ isApprover: true, loading: false });
+      setIsApprover(true);
     } catch {
-      setState({ isApprover: false, loading: false });
+      setIsApprover(false);
     }
   });
 
@@ -19,5 +21,5 @@ export const useIsApprover = (): { isApprover: boolean; loading: boolean } => {
     checkApprover();
   }, []);
 
-  return state;
+  return isApprover;
 };

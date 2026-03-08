@@ -2,6 +2,7 @@ import { jwtDecode } from "jwt-decode";
 
 import { apiClient } from "@/api/client";
 import { toSnakeCase } from "@/utils/functions";
+import { Role } from "@/utils/role";
 import {
   AuthToken,
   Earning,
@@ -21,7 +22,7 @@ export const createPlugin = async (data: PluginProposal): Promise<void> => {
 
 export const createTeamInvite = async (
   pluginId: string,
-  role: Member["role"],
+  role: Role,
 ): Promise<MemberInvitation> => {
   return apiClient.post<MemberInvitation>(`/plugins/${pluginId}/team/invite`, {
     role,
@@ -34,7 +35,7 @@ export const delAuthToken = async (token: string): Promise<void> => {
   return apiClient.del(`/auth/tokens/${token_id}`);
 };
 
-export const delMember = async (
+export const deleteMember = async (
   pluginId: string,
   publicKey: string,
 ): Promise<string> => {
@@ -73,6 +74,18 @@ export const getPlugin = async (pluginId: string): Promise<Plugin> => {
   return apiClient.get<Plugin>(`/plugins/${pluginId}`);
 };
 
+export const getPluginRole = async (pluginId: string): Promise<PluginRole> => {
+  try {
+    const { canEdit, role } = await apiClient.get<PluginRole>(
+      `/plugins/${pluginId}/my-role`,
+    );
+
+    return { canEdit, role };
+  } catch {
+    return { canEdit: false, role: "viewer" };
+  }
+};
+
 export const getPlugins = async (): Promise<Plugin[]> => {
   return apiClient.get<Plugin[]>("/plugins");
 };
@@ -101,10 +114,6 @@ export const updatePlugin = async ({
     signature,
     signed_message: signedMessage,
   });
-};
-
-export const getMyRole = async (pluginId: string): Promise<PluginRole> => {
-  return apiClient.get<PluginRole>(`/plugins/${pluginId}/my-role`);
 };
 
 export const getAdminProposals = async (): Promise<PluginProposal[]> => {
