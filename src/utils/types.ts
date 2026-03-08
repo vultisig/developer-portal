@@ -78,8 +78,9 @@ export type PluginProposal = Pick<
   notes: string;
   pluginId: string;
   pricingModel: "free" | "once" | "per-tx";
+  publicKey: string;
   shortDescription: string;
-  status: "active" | "submitted";
+  status: "submitted" | "approved" | "listed" | "active";
   supportedChains: Chain[];
   thumbnail?: string; // Only for form submission, not returned by API
 };
