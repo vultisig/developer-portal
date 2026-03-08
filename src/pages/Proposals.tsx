@@ -213,6 +213,38 @@ export const ProposalsPage = () => {
                 In Review
               </HStack>
             ),
+            approved: () => (
+              <Stack
+                as="span"
+                $style={{
+                  backgroundColor: colors.info.toRgba(0.05),
+                  borderRadius: "4px",
+                  color: colors.info.toHex(),
+                  fontSize: "12px",
+                  lineHeight: "24px",
+                  padding: "0 8px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Approved
+              </Stack>
+            ),
+            listed: () => (
+              <Stack
+                as="span"
+                $style={{
+                  backgroundColor: colors.success.toRgba(0.05),
+                  borderRadius: "4px",
+                  color: colors.success.toHex(),
+                  fontSize: "12px",
+                  lineHeight: "24px",
+                  padding: "0 8px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Listed
+              </Stack>
+            ),
           })}
         </HStack>
       ),
