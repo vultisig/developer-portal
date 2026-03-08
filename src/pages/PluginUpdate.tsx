@@ -1,11 +1,12 @@
 import { Form, FormProps, Input, message, theme as antTheme } from "antd";
 import { useEffect, useEffectEvent, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { getPlugin, updatePlugin } from "@/api/portal";
 import { useAntd } from "@/hooks/useAntd";
 import { useGoBack } from "@/hooks/useGoBack";
+import { usePluginRole } from "@/hooks/usePluginRole";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
@@ -27,8 +28,13 @@ export const PluginUpdatePage = () => {
   const { onFinishFailed } = useAntd();
   const { pluginId = "" } = useParams();
   const [form] = Form.useForm<PluginUpdate>();
+  const { canEdit, isAdmin, loading: roleLoading, role } = usePluginRole(pluginId);
   const goBack = useGoBack();
+  const navigate = useNavigate();
   const colors = useTheme();
+
+  const canEditEndpoint = role === "admin" || role === "staff";
+  const canEditPayout = isAdmin;
 
   const fetchPlugin = useEffectEvent(async () => {
     try {
@@ -111,7 +117,16 @@ export const PluginUpdatePage = () => {
     fetchPlugin();
   }, [pluginId]);
 
-  if (!plugin) return <Spin centered />;
+  useEffect(() => {
+    if (!roleLoading && !canEdit) {
+      message.error("You don't have permission to edit this plugin");
+      navigate(routeTree.plugins.path, { replace: true });
+    }
+  }, [roleLoading, canEdit, navigate]);
+
+  if (!plugin || roleLoading) return <Spin centered />;
+
+  if (!canEdit) return null;
 
   return (
     <VStack
@@ -145,6 +160,21 @@ export const PluginUpdatePage = () => {
           Update your plugin settings
         </Stack>
       </VStack>
+      {role === "editor" && (
+        <Stack
+          $style={{
+            backgroundColor: colors.info.toRgba(0.1),
+            borderRadius: "8px",
+            color: colors.info.toHex(),
+            fontSize: "13px",
+            lineHeight: "18px",
+            padding: "12px 16px",
+          }}
+        >
+          As an editor, you can update the title and description. Server
+          endpoint and payout address can only be changed by an admin.
+        </Stack>
+      )}
       <VStack
         $style={{
           backgroundColor: colors.bgSecondary.toHex(),
@@ -202,6 +232,11 @@ export const PluginUpdatePage = () => {
             <Form.Item<PluginUpdate>
               label="Server Endpoint"
               name="serverEndpoint"
+              tooltip={
+                !canEditEndpoint
+                  ? "Only admins can modify the server endpoint"
+                  : undefined
+              }
               rules={[
                 {
                   required: true,
@@ -209,11 +244,19 @@ export const PluginUpdatePage = () => {
                 },
               ]}
             >
-              <Input placeholder="https://your-plugin.example.com" />
+              <Input
+                disabled={!canEditEndpoint}
+                placeholder="https://your-plugin.example.com"
+              />
             </Form.Item>
             <Form.Item<PluginUpdate>
               label="Payout Address"
               name="payoutAddress"
+              tooltip={
+                !canEditPayout
+                  ? "Only admins can modify the payout address"
+                  : undefined
+              }
               rules={[
                 {
                   pattern: /^0x[0-9a-fA-F]{40}$/,
@@ -221,7 +264,7 @@ export const PluginUpdatePage = () => {
                 },
               ]}
             >
-              <Input placeholder="0x..." />
+              <Input disabled={!canEditPayout} placeholder="0x..." />
             </Form.Item>
           </Form>
         </VStack>
