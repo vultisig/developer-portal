@@ -39,7 +39,7 @@ export const AdminProposalsPage = () => {
   const triggerRefetch = () =>
     setState((prev) => ({ ...prev, refetch: prev.refetch + 1 }));
 
-  const handleApprove = (proposalId: string) => {
+  const handleApprove = (proposalId: string, publicKey: string) => {
     Modal.confirm({
       title: "Approve Proposal?",
       content: "This will approve the plugin proposal.",
@@ -47,7 +47,7 @@ export const AdminProposalsPage = () => {
       cancelText: "Cancel",
       onOk: async () => {
         try {
-          await approveProposal(proposalId);
+          await approveProposal(proposalId, publicKey);
           message.success("Proposal approved");
           triggerRefetch();
         } catch (error) {
@@ -73,11 +73,10 @@ export const AdminProposalsPage = () => {
           message.success("Proposal published");
           triggerRefetch();
         } catch (error) {
-          if (error instanceof Error) {
-            message.error(error.message);
-          } else {
-            message.error("Failed to publish proposal");
-          }
+          const msg =
+            error instanceof Error ? error.message : "Failed to publish proposal";
+
+          message.error(msg);
         }
       },
     });
@@ -151,30 +150,34 @@ export const AdminProposalsPage = () => {
       dataIndex: "status",
       key: "status",
       title: "Status",
-      render: (_, { status }) => (
-        <HStack $style={{ justifyContent: "center" }}>
-          <Stack
-            as="span"
-            $style={{
-              backgroundColor:
-                status === "active"
-                  ? colors.success.toRgba(0.05)
-                  : colors.warning.toRgba(0.05),
-              borderRadius: "4px",
-              color:
-                status === "active"
-                  ? colors.success.toHex()
-                  : colors.warning.toHex(),
-              fontSize: "12px",
-              lineHeight: "24px",
-              padding: "0 8px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {status === "active" ? "Live" : "In Review"}
-          </Stack>
-        </HStack>
-      ),
+      render: (_, { status }) => {
+        const statusConfig = {
+          submitted: { color: colors.warning, label: "Submitted" },
+          approved: { color: colors.info, label: "Approved" },
+          listed: { color: colors.success, label: "Listed" },
+          active: { color: colors.success, label: "Live" },
+        };
+        const config = statusConfig[status] ?? statusConfig.submitted;
+
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <Stack
+              as="span"
+              $style={{
+                backgroundColor: config.color.toRgba(0.05),
+                borderRadius: "4px",
+                color: config.color.toHex(),
+                fontSize: "12px",
+                lineHeight: "24px",
+                padding: "0 8px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {config.label}
+            </Stack>
+          </HStack>
+        );
+      },
     },
     {
       align: "center",
@@ -182,27 +185,41 @@ export const AdminProposalsPage = () => {
       key: "actions",
       title: "Actions",
       width: 200,
-      render: (_, { pluginId, status }) =>
-        status === "submitted" ? (
-          <HStack $style={{ gap: "8px", justifyContent: "center" }}>
-            <Button
-              kind="success"
-              onClick={() => handleApprove(pluginId)}
-            >
-              {md ? "Approve" : "A"}
-            </Button>
-            <Button onClick={() => handlePublish(pluginId)}>
-              {md ? "Publish" : "P"}
-            </Button>
-          </HStack>
-        ) : (
+      render: (_, { pluginId, publicKey, status }) => {
+        if (status === "submitted") {
+          return (
+            <HStack $style={{ gap: "8px", justifyContent: "center" }}>
+              <Button
+                kind="success"
+                onClick={() => handleApprove(pluginId, publicKey)}
+              >
+                {md ? "Approve" : "A"}
+              </Button>
+            </HStack>
+          );
+        }
+
+        if (status === "approved") {
+          return (
+            <HStack $style={{ justifyContent: "center" }}>
+              <Button onClick={() => handlePublish(pluginId)}>
+                {md ? "Publish" : "P"}
+              </Button>
+            </HStack>
+          );
+        }
+
+        return (
           <Stack
             as="span"
             $style={{ color: colors.textTertiary.toHex() }}
           >
-            Published
+            {status === "listed" || status === "active"
+              ? "Published"
+              : status}
           </Stack>
-        ),
+        );
+      },
     },
   ];
 
