@@ -4,13 +4,14 @@ import {
   Select,
   Table,
   TableProps,
+  message,
   theme as antTheme,
   Tooltip,
 } from "antd";
 import { useResponsive } from "antd-style";
 import { debounce } from "lodash-es";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { getEarnings, getPlugin } from "@/api/portal";
@@ -18,6 +19,7 @@ import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
 import { useFilterParams } from "@/hooks/useFilterParams";
+import { usePluginRole } from "@/hooks/usePluginRole";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
@@ -56,6 +58,8 @@ export const PluginEarningsPage = () => {
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
   const [form] = Form.useForm<EarningFilters>();
+  const { canEdit, loading: roleLoading, role } = usePluginRole(pluginId);
+  const navigate = useNavigate();
   const colors = useTheme();
 
   const columns: TableProps<Earning>["columns"] = [
@@ -238,6 +242,13 @@ export const PluginEarningsPage = () => {
     fetchPlugin();
   }, [pluginId]);
 
+  useEffect(() => {
+    if (!roleLoading && role === "viewer") {
+      message.error("Viewers don't have access to earnings");
+      navigate(routeTree.plugins.path, { replace: true });
+    }
+  }, [roleLoading, role, navigate]);
+
   const stats = [
     {
       color: colors.info,
@@ -262,7 +273,9 @@ export const PluginEarningsPage = () => {
     },
   ];
 
-  if (!plugin) return <Spin centered />;
+  if (!plugin || roleLoading) return <Spin centered />;
+
+  if (role === "viewer") return null;
 
   return (
     <VStack
@@ -297,13 +310,15 @@ export const PluginEarningsPage = () => {
             {plugin.title}
           </Stack>
         </HStack>
-        <Button
-          href={routeTree.pluginUpdate.link(plugin.id)}
-          icon={<PencilLineIcon fontSize={16} />}
-          state={true}
-        >
-          {md && "Update Plugin"}
-        </Button>
+        {canEdit && (
+          <Button
+            href={routeTree.pluginUpdate.link(plugin.id)}
+            icon={<PencilLineIcon fontSize={16} />}
+            state={true}
+          >
+            {md && "Update Plugin"}
+          </Button>
+        )}
       </HStack>
       <Stack
         $style={{
