@@ -285,6 +285,10 @@ export const PluginMembersPage = () => {
                   $style={{ color: colors.textTertiary.toHex() }}
                 >
                   {match(role, {
+                    admin: () =>
+                      "Admins have full access to all plugin features and team management.",
+                    staff: () =>
+                      "Staff members have elevated access to plugin features.",
                     editor: () =>
                       "Editors can create and manage plugins but cannot manage team members.",
                     viewer: () =>
