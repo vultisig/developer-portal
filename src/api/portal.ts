@@ -116,7 +116,7 @@ export const approveProposal = async (
   publicKey: string,
 ): Promise<void> => {
   return apiClient.post(`/admin/plugin-proposals/${proposalId}/approve`, {
-    public_key: publicKey,
+    publicKey,
   });
 };
 
