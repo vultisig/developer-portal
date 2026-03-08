@@ -124,9 +124,10 @@ export const approveProposal = async (
   proposalId: string,
   publicKey: string,
 ): Promise<void> => {
-  return apiClient.post(`/admin/plugin-proposals/${proposalId}/approve`, {
-    publicKey,
-  });
+  return apiClient.post(
+    `/admin/plugin-proposals/${proposalId}/approve`,
+    toSnakeCase({ publicKey }),
+  );
 };
 
 export const publishProposal = async (proposalId: string): Promise<void> => {
