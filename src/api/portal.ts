@@ -111,8 +111,13 @@ export const getAdminProposals = async (): Promise<PluginProposal[]> => {
   return apiClient.get<PluginProposal[]>("/admin/plugin-proposals");
 };
 
-export const approveProposal = async (proposalId: string): Promise<void> => {
-  return apiClient.post(`/admin/plugin-proposals/${proposalId}/approve`);
+export const approveProposal = async (
+  proposalId: string,
+  publicKey: string,
+): Promise<void> => {
+  return apiClient.post(`/admin/plugin-proposals/${proposalId}/approve`, {
+    public_key: publicKey,
+  });
 };
 
 export const publishProposal = async (proposalId: string): Promise<void> => {
