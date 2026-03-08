@@ -9,41 +9,49 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { Button } from "@/toolkits/Button";
 import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import {
-  computeFieldUpdates,
-  createPluginUpdateTypedData,
-  generateNonce,
-  PluginUpdateMessage,
-} from "@/utils/eip712";
+import { createPluginUpdateTypedData } from "@/utils/eip712";
 import { connect, signTypedData } from "@/utils/extension";
+import { computeFieldUpdates, generateNonce } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Plugin } from "@/utils/types";
-
-type FormValues = Pick<
-  Plugin,
-  "title" | "description" | "serverEndpoint" | "payoutAddress"
->;
+import { Plugin, PluginUpdate, PluginUpdateMessage } from "@/utils/types";
 
 type StateProps = {
-  loaded: boolean;
   plugin?: Plugin;
-  submitting: boolean;
+  submitting?: boolean;
 };
 
-export const PluginEditPage = () => {
-  const [state, setState] = useState<StateProps>({
-    loaded: false,
-    submitting: false,
-  });
-  const { loaded, plugin, submitting } = state;
+export const PluginUpdatePage = () => {
+  const [state, setState] = useState<StateProps>({});
+  const { plugin, submitting } = state;
   const { token } = antTheme.useToken();
   const { onFinishFailed } = useAntd();
   const { pluginId = "" } = useParams();
-  const [form] = Form.useForm<FormValues>();
+  const [form] = Form.useForm<PluginUpdate>();
   const goBack = useGoBack();
   const colors = useTheme();
 
-  const handleFinish: FormProps<FormValues>["onFinish"] = async (values) => {
+  const fetchPlugin = useEffectEvent(async () => {
+    try {
+      const plugin = await getPlugin(pluginId);
+
+      setState((prev) => ({ ...prev, plugin }));
+
+      setTimeout(() => {
+        form.setFieldsValue({
+          description: plugin.description,
+          payoutAddress: plugin.payoutAddress,
+          serverEndpoint: plugin.serverEndpoint,
+          title: plugin.title,
+        });
+      }, 0);
+    } catch {
+      message.error("Failed to load plugin");
+
+      goBack(routeTree.plugins.path);
+    }
+  });
+
+  const handleFinish: FormProps<PluginUpdate>["onFinish"] = async (values) => {
     if (submitting || !plugin) return;
 
     setState((prev) => ({ ...prev, submitting: true }));
@@ -56,14 +64,7 @@ export const PluginEditPage = () => {
         payoutAddress: plugin.payoutAddress,
       };
 
-      const updated: Record<string, string> = {
-        title: values.title,
-        description: values.description,
-        serverEndpoint: values.serverEndpoint,
-        payoutAddress: values.payoutAddress,
-      };
-
-      const updates = computeFieldUpdates(original, updated);
+      const updates = computeFieldUpdates(original, values);
 
       if (updates.length === 0) {
         message.info("No changes to save");
@@ -86,11 +87,9 @@ export const PluginEditPage = () => {
 
       if (!signature) throw new Error("Signature was not provided");
 
-      await updatePlugin(pluginId, {
-        title: values.title,
-        description: values.description,
-        serverEndpoint: values.serverEndpoint,
-        payoutAddress: values.payoutAddress,
+      await updatePlugin({
+        data: values,
+        pluginId,
         signature,
         signedMessage: updateMessage,
       });
@@ -108,29 +107,11 @@ export const PluginEditPage = () => {
     }
   };
 
-  const fetchPlugin = useEffectEvent(async (pluginId: string) => {
-    try {
-      const plugin = await getPlugin(pluginId);
-
-      setState((prev) => ({ ...prev, loaded: true, plugin }));
-
-      form.setFieldsValue({
-        title: plugin.title,
-        description: plugin.description,
-        serverEndpoint: plugin.serverEndpoint,
-        payoutAddress: plugin.payoutAddress,
-      });
-    } catch {
-      message.error("Failed to load plugin");
-      goBack(routeTree.plugins.path);
-    }
-  });
-
   useEffect(() => {
-    fetchPlugin(pluginId);
+    fetchPlugin();
   }, [pluginId]);
 
-  if (!loaded) return <Spin centered />;
+  if (!plugin) return <Spin centered />;
 
   return (
     <VStack
@@ -150,7 +131,7 @@ export const PluginEditPage = () => {
             textAlign: "center",
           }}
         >
-          Edit {plugin?.title ?? "Plugin"}
+          {`Edit ${plugin.title}`}
         </Stack>
         <Stack
           as="span"
@@ -183,7 +164,7 @@ export const PluginEditPage = () => {
           <Stack as="span" $style={{ fontSize: "16px", fontWeight: "600" }}>
             Basic Information
           </Stack>
-          <Form<FormValues>
+          <Form<PluginUpdate>
             autoComplete="off"
             form={form}
             layout="vertical"
@@ -191,7 +172,7 @@ export const PluginEditPage = () => {
             onFinishFailed={(errorInfo) => onFinishFailed(errorInfo, form)}
             requiredMark={false}
           >
-            <Form.Item<FormValues>
+            <Form.Item<PluginUpdate>
               label="Title"
               name="title"
               rules={[
@@ -203,7 +184,7 @@ export const PluginEditPage = () => {
             >
               <Input placeholder="e.g., DCA Plugin" />
             </Form.Item>
-            <Form.Item<FormValues>
+            <Form.Item<PluginUpdate>
               label="Description"
               name="description"
               rules={[
@@ -218,7 +199,7 @@ export const PluginEditPage = () => {
                 rows={4}
               />
             </Form.Item>
-            <Form.Item<FormValues>
+            <Form.Item<PluginUpdate>
               label="Server Endpoint"
               name="serverEndpoint"
               rules={[
@@ -230,7 +211,7 @@ export const PluginEditPage = () => {
             >
               <Input placeholder="https://your-plugin.example.com" />
             </Form.Item>
-            <Form.Item<FormValues>
+            <Form.Item<PluginUpdate>
               label="Payout Address"
               name="payoutAddress"
               rules={[

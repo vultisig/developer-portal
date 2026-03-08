@@ -165,7 +165,7 @@ export const DashboardPage = () => {
         ))}
         <VStack
           as={Link}
-          to={routeTree.proposalCreate.path}
+          to={routeTree.pluginCreate.path}
           state={true}
           $style={{
             alignItems: "center",

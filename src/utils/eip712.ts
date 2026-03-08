@@ -1,13 +1,12 @@
-export const EIP712_DOMAIN: Record<string, unknown> = {
+import { PluginUpdateMessage } from "@/utils/types";
+
+const EIP712_DOMAIN: Record<string, unknown> = {
   name: "Vultisig Developer Portal",
   version: "1",
   chainId: 1,
 };
 
-export const EIP712_TYPES: Record<
-  string,
-  Array<{ name: string; type: string }>
-> = {
+const EIP712_TYPES: Record<string, Array<{ name: string; type: string }>> = {
   EIP712Domain: [
     { name: "name", type: "string" },
     { name: "version", type: "string" },
@@ -27,44 +26,9 @@ export const EIP712_TYPES: Record<
   ],
 };
 
-export type FieldUpdate = {
-  field: string;
-  oldValue: string;
-  newValue: string;
-};
-
-export type PluginUpdateMessage = {
-  pluginId: string;
-  signer: string;
-  nonce: number;
-  timestamp: number;
-  updates: FieldUpdate[];
-};
-
-export const computeFieldUpdates = (
-  original: Record<string, string>,
-  updated: Record<string, string>,
-): FieldUpdate[] => {
-  const updates: FieldUpdate[] = [];
-
-  for (const field of Object.keys(updated)) {
-    const oldValue = original[field] ?? "";
-    const newValue = updated[field] ?? "";
-
-    if (oldValue !== newValue) {
-      updates.push({ field, oldValue, newValue });
-    }
-  }
-
-  return updates;
-};
-
 export const createPluginUpdateTypedData = (message: PluginUpdateMessage) => ({
   types: EIP712_TYPES,
   primaryType: "PluginUpdate" as const,
   domain: EIP712_DOMAIN,
   message,
 });
-
-export const generateNonce = (): number =>
-  Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 1000);

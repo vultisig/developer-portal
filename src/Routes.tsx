@@ -14,13 +14,13 @@ import { DashboardPage } from "@/pages/Dashboard";
 import { EarningsPage } from "@/pages/Earnings";
 import { InternalErrorPage } from "@/pages/InternalError";
 import { NotFoundPage } from "@/pages/NotFound";
+import { PluginCreatePage } from "@/pages/PluginCreate";
 import { PluginEarningsPage } from "@/pages/PluginEarnings";
-import { PluginEditPage } from "@/pages/PluginEdit";
 import { PluginMembersPage } from "@/pages/PluginMembers";
 import { PluginsPage } from "@/pages/Plugins";
+import { PluginUpdatePage } from "@/pages/PluginUpdate";
 import { ProjectCategoriesPage } from "@/pages/ProjectCategories";
 import { ProjectManagementPage } from "@/pages/ProjectManagement";
-import { ProposalManagementPage } from "@/pages/ProposalManagement";
 import { ProposalsPage } from "@/pages/Proposals";
 import { RouteKey, routeTree } from "@/utils/routes";
 
@@ -67,12 +67,16 @@ export const Routes = () => {
           element: setCurrentRoute("plugins", <PluginsPage />),
         },
         {
+          path: routeTree.pluginCreate.path,
+          element: setCurrentRoute("plugins", <PluginCreatePage />),
+        },
+        {
           path: routeTree.pluginEarnings.path,
           element: setCurrentRoute("plugins", <PluginEarningsPage />),
         },
         {
           path: routeTree.pluginUpdate.path,
-          element: setCurrentRoute("plugins", <PluginEditPage />),
+          element: setCurrentRoute("plugins", <PluginUpdatePage />),
         },
         {
           path: routeTree.pluginMembers.path,
@@ -81,14 +85,6 @@ export const Routes = () => {
         {
           path: routeTree.proposals.path,
           element: setCurrentRoute("proposals", <ProposalsPage />),
-        },
-        {
-          path: routeTree.proposalCreate.path,
-          element: setCurrentRoute("proposals", <ProposalManagementPage />),
-        },
-        {
-          path: routeTree.proposalUpdate.path,
-          element: setCurrentRoute("proposals", <ProposalManagementPage />),
         },
       ],
       errorElement: <InternalErrorPage />,

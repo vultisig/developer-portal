@@ -10,11 +10,12 @@ import {
   Member,
   MemberInvitation,
   Plugin,
-  Proposal,
+  PluginUpdate,
+  PluginProposal,
 } from "@/utils/types";
 
-export const createProposal = async (proposal: Proposal): Promise<void> => {
-  return apiClient.post("/plugin-proposals", toSnakeCase(proposal));
+export const createPlugin = async (data: PluginProposal): Promise<void> => {
+  return apiClient.post("/plugin-proposals", toSnakeCase(data));
 };
 
 export const createTeamInvite = async (
@@ -75,33 +76,28 @@ export const getPlugins = async (): Promise<Plugin[]> => {
   return apiClient.get<Plugin[]>("/plugins");
 };
 
-export const getProposal = async (pluginId: string): Promise<Proposal> => {
-  return apiClient.get<Proposal>(`/plugin-proposals/${pluginId}`);
-};
-
-export const getProposals = async (): Promise<Proposal[]> => {
-  return apiClient.get<Proposal[]>("/plugin-proposals");
+export const getProposals = async (): Promise<PluginProposal[]> => {
+  return apiClient.get<PluginProposal[]>("/plugin-proposals");
 };
 
 export const getMembers = async (pluginId: string): Promise<Member[]> => {
   return apiClient.get<Member[]>(`/plugins/${pluginId}/team`);
 };
 
-export const updatePlugin = async (
-  pluginId: string,
-  data: {
-    title: string;
-    description: string;
-    serverEndpoint: string;
-    payoutAddress: string;
-    signature: string;
-    signedMessage: object;
-  },
-): Promise<void> => {
-  const { signedMessage, ...rest } = data;
-
+export const updatePlugin = async ({
+  data,
+  pluginId,
+  signature,
+  signedMessage,
+}: {
+  data: PluginUpdate;
+  pluginId: string;
+  signature: string;
+  signedMessage: object;
+}): Promise<void> => {
   return apiClient.put(`/plugins/${pluginId}`, {
-    ...toSnakeCase(rest),
+    ...toSnakeCase(data),
+    signature,
     signed_message: signedMessage,
   });
 };

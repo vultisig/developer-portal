@@ -1,7 +1,6 @@
-import { Table, TableProps, theme as antTheme, Tooltip } from "antd";
+import { Table, TableProps, theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
 import { useEffect, useEffectEvent, useState } from "react";
-import { Link } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { getPlugins, getProposals } from "@/api/portal";
@@ -9,18 +8,17 @@ import { DateView } from "@/components/DateView";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { LiveFullIcon } from "@/icons/LiveFullIcon";
 import { LoaderIcon } from "@/icons/LoaderIcon";
-import { PencilLineIcon } from "@/icons/PencilLineIcon";
 import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { match } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Plugin, Proposal } from "@/utils/types";
+import { Plugin, PluginProposal } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
   plugins: Plugin[];
-  proposals: Proposal[];
+  proposals: PluginProposal[];
 };
 
 export const ProposalsPage = () => {
@@ -34,7 +32,7 @@ export const ProposalsPage = () => {
   const { md } = useResponsive();
   const colors = useTheme();
 
-  const columns: TableProps<Proposal>["columns"] = [
+  const columns: TableProps<PluginProposal>["columns"] = [
     {
       dataIndex: "title",
       key: "title",
@@ -155,47 +153,6 @@ export const ProposalsPage = () => {
         </HStack>
       ),
     },
-    {
-      align: "center",
-      dataIndex: "pluginId",
-      key: "pluginId",
-      title: "Action",
-      width: 124,
-      render: (_, { pluginId }) => (
-        <HStack $style={{ gap: "8px", justifyContent: "center" }}>
-          <Tooltip title="Update">
-            <HStack
-              as={Link}
-              to={routeTree.proposalUpdate.link(pluginId)}
-              state={true}
-              $style={{
-                backgroundColor: colors.bgTertiary.toHex(),
-                borderRadius: "50%",
-                padding: "12px",
-              }}
-              $hover={{ color: colors.info.toHex() }}
-            >
-              <PencilLineIcon fontSize={16} />
-            </HStack>
-          </Tooltip>
-          {/* <Tooltip title="Transactions">
-            <HStack
-              as={Link}
-              to={routeTree.pluginEarnings.link(pluginId)}
-              state={true}
-              $style={{
-                backgroundColor: colors.bgTertiary.toHex(),
-                borderRadius: "50%",
-                padding: "12px",
-              }}
-              $hover={{ color: colors.info.toHex() }}
-            >
-              <NewspaperIcon fontSize={16} />
-            </HStack>
-          </Tooltip> */}
-        </HStack>
-      ),
-    },
   ];
 
   const fetchData = useEffectEvent(async () => {
@@ -258,7 +215,7 @@ export const ProposalsPage = () => {
           </Stack>
         </VStack>
         <Button
-          href={routeTree.proposalCreate.path}
+          href={routeTree.pluginCreate.path}
           icon={<PlusLargeIcon fontSize={16} />}
           state={true}
         >
@@ -306,7 +263,7 @@ export const ProposalsPage = () => {
           </HStack>
         ))}
       </Stack>
-      <Table<Proposal>
+      <Table<PluginProposal>
         columns={columns}
         dataSource={proposals}
         loading={loading}
