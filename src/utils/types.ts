@@ -34,6 +34,12 @@ export type EarningSummary = {
   totalTransactions: number;
 };
 
+export type FieldUpdate = {
+  field: string;
+  newValue: string;
+  oldValue: string;
+};
+
 export type Image = {
   contentType: ImageMime;
   data: string;
@@ -52,6 +58,7 @@ export type Plugin = {
   description: string;
   id: string;
   logoUrl?: string;
+  payoutAddress: string;
   publicKey?: string;
   serverEndpoint: string;
   thumbnailUrl?: string;
@@ -59,24 +66,35 @@ export type Plugin = {
   updatedAt: string;
 };
 
-export type Proposal = {
+export type PluginProposal = Pick<
+  Plugin,
+  "category" | "createdAt" | "serverEndpoint" | "title" | "updatedAt"
+> & {
   banner?: string; // Only for form submission, not returned by API
-  category: string;
   contactEmail: string;
-  createdAt: string;
   images: Image[];
   logo?: string; // Only for form submission, not returned by API
   media?: string[]; // Only for form submission, not returned by API
   notes: string;
   pluginId: string;
   pricingModel: "free" | "once" | "per-tx";
-  serverEndpoint: string;
   shortDescription: string;
   status: "active" | "submitted";
   supportedChains: Chain[];
-  title: string;
   thumbnail?: string; // Only for form submission, not returned by API
-  updatedAt: string;
+};
+
+export type PluginUpdate = Pick<
+  Plugin,
+  "description" | "payoutAddress" | "serverEndpoint" | "title"
+>;
+
+export type PluginUpdateMessage = {
+  nonce: number;
+  pluginId: string;
+  signer: string;
+  timestamp: number;
+  updates: FieldUpdate[];
 };
 
 export type Member = {

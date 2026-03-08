@@ -3,6 +3,7 @@ import { Decimal } from "decimal.js";
 
 import { Chain, chains, explorerBaseUrl } from "@/utils/chain";
 import { Currency, currencySymbols } from "@/utils/currency";
+import { FieldUpdate } from "@/utils/types";
 
 const isArray = (arr: any): arr is any[] => {
   return Array.isArray(arr);
@@ -47,6 +48,24 @@ export const camelCaseToTitle = (input: string) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+export const computeFieldUpdates = (
+  original: Record<string, string>,
+  updated: Record<string, string>,
+): FieldUpdate[] => {
+  const updates: FieldUpdate[] = [];
+
+  for (const field of Object.keys(updated)) {
+    const oldValue = original[field] ?? "";
+    const newValue = updated[field] ?? "";
+
+    if (oldValue !== newValue) {
+      updates.push({ field, oldValue, newValue });
+    }
+  }
+
+  return updates;
+};
+
 export const formatDateWithTimezone = (date: string | number) => {
   const d = dayjs(date);
 
@@ -55,6 +74,12 @@ export const formatDateWithTimezone = (date: string | number) => {
     time: d.format("HH:mm"),
     timezone: `UTC${d.format("Z")}`,
   };
+};
+
+export const generateNonce = (): number => {
+  return (
+    Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 1000)
+  );
 };
 
 export const getExplorerUrl = (
@@ -280,16 +305,4 @@ export const toValueFormat = (
 
 export const tinyId = () => {
   return Math.random().toString(36).slice(2, 8);
-};
-
-export const urlToBase64 = async (url: string): Promise<string> => {
-  const res = await fetch(url);
-  const blob = await res.blob();
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 };

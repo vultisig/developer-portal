@@ -8,8 +8,6 @@ export type RouteKey =
   | "pluginMembers"
   | "pluginUpdate"
   | "proposals"
-  | "proposalCreate"
-  | "proposalUpdate"
   | "projectCategories"
   | "projectManagement"
   | "root"
@@ -42,11 +40,7 @@ export const routeTree = {
     link: (projectId: string) => `/account/projects/${projectId}`,
   },
   proposals: { path: "/proposals" },
-  proposalCreate: { path: "/proposals/create" },
-  proposalUpdate: {
-    path: "/proposals/:pluginId",
-    link: (pluginId: string) => `/proposals/${pluginId}`,
-  },
+
   root: { path: "/" },
   users: { path: "/users" },
 } satisfies Record<

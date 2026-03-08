@@ -16,12 +16,12 @@ import { PlusLargeIcon } from "@/icons/PlusLargeIcon";
 import { Button } from "@/toolkits/Button";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { routeTree } from "@/utils/routes";
-import { Plugin, Proposal } from "@/utils/types";
+import { Plugin, PluginProposal } from "@/utils/types";
 
 type StateProps = {
   loading: boolean;
   plugins: Plugin[];
-  proposals: Proposal[];
+  proposals: PluginProposal[];
 };
 
 export const PluginsPage = () => {
@@ -210,7 +210,7 @@ export const PluginsPage = () => {
           </Stack>
         </VStack>
         <Button
-          href={routeTree.proposalCreate.path}
+          href={routeTree.pluginCreate.path}
           icon={<PlusLargeIcon fontSize={16} />}
           state={true}
         >

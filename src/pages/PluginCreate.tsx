@@ -9,11 +9,10 @@ import {
 } from "antd";
 import ImgCrop from "antd-img-crop";
 import { useResponsive } from "antd-style";
-import { FC, Fragment, useEffect, useEffectEvent, useState } from "react";
-import { useParams } from "react-router-dom";
+import { FC, Fragment, useState } from "react";
 import { useTheme } from "styled-components";
 
-import { createProposal, getProposal, validatePluginId } from "@/api/portal";
+import { createPlugin, validatePluginId } from "@/api/portal";
 import { StatusModal } from "@/components/StatusModal";
 import { useAntd } from "@/hooks/useAntd";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -23,12 +22,11 @@ import { EmailTwoIcon } from "@/icons/EmailTwoIcon";
 import { ImagesFiveIcon } from "@/icons/ImagesFiveIcon";
 import { Button } from "@/toolkits/Button";
 import { Divider } from "@/toolkits/Divider";
-import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
 import { chains } from "@/utils/chain";
-import { parseBase64DataUrl, tinyId, urlToBase64 } from "@/utils/functions";
+import { parseBase64DataUrl, tinyId } from "@/utils/functions";
 import { routeTree } from "@/utils/routes";
-import { Image, ImageMime, Proposal } from "@/utils/types";
+import { Image, ImageMime, PluginProposal } from "@/utils/types";
 
 const steps = [
   "Plugin Basics",
@@ -39,25 +37,23 @@ const steps = [
 
 type StateProps = {
   error?: string;
-  proposal?: Proposal;
-  loaded?: boolean;
+  proposal?: PluginProposal;
   step: number;
   submitting?: boolean;
   success?: string;
 };
 
-export const ProposalManagementPage = () => {
+export const PluginCreatePage = () => {
   const [state, setState] = useState<StateProps>({ step: 1 });
-  const { error, loaded, step, proposal, submitting, success } = state;
+  const { error, step, proposal, submitting, success } = state;
   const { token } = antTheme.useToken();
   const { onFinishFailed } = useAntd();
-  const { pluginId = "" } = useParams();
   const { md } = useResponsive();
-  const [form] = Form.useForm<Proposal>();
+  const [form] = Form.useForm<PluginProposal>();
   const goBack = useGoBack();
   const colors = useTheme();
 
-  const handleFinish: FormProps<Proposal>["onFinish"] = ({
+  const handleFinish: FormProps<PluginProposal>["onFinish"] = ({
     logo,
     media = [],
     thumbnail,
@@ -111,7 +107,7 @@ export const ProposalManagementPage = () => {
 
       setState((prev) => ({ ...prev, submitting: true }));
 
-      createProposal(values)
+      createPlugin(values)
         .then(() => {
           setState((prev) => ({
             ...prev,
@@ -128,32 +124,6 @@ export const ProposalManagementPage = () => {
         });
     }
   };
-
-  const fetchProposal = useEffectEvent(async (pluginId: string) => {
-    if (pluginId) {
-      setState((prev) => ({ ...prev, loaded: false }));
-
-      const { images, ...plugin } = await getProposal(pluginId);
-
-      const logoUrl = images.find(({ type }) => type === "logo")?.url;
-      const thumbnailUrl = images.find(({ type }) => type === "thumbnail")?.url;
-
-      if (logoUrl) plugin.logo = await urlToBase64(logoUrl);
-      if (thumbnailUrl) plugin.thumbnail = await urlToBase64(thumbnailUrl);
-
-      setState((prev) => ({ ...prev, loaded: true }));
-
-      form.setFieldsValue(plugin);
-    } else {
-      setState((prev) => ({ ...prev, loaded: true }));
-    }
-  });
-
-  useEffect(() => {
-    fetchProposal(pluginId);
-  }, [pluginId]);
-
-  if (!loaded) return <Spin centered />;
 
   return (
     <>
@@ -276,7 +246,7 @@ export const ProposalManagementPage = () => {
               padding: "20px",
             }}
           >
-            <Form<Proposal>
+            <Form<PluginProposal>
               autoComplete="off"
               form={form}
               layout="vertical"
@@ -285,7 +255,7 @@ export const ProposalManagementPage = () => {
               requiredMark={false}
             >
               <Stack $style={{ display: step === 1 ? "block" : "none" }}>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   name="logo"
                   rules={[
                     {
@@ -296,7 +266,7 @@ export const ProposalManagementPage = () => {
                 >
                   <UploadLogo />
                 </Form.Item>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   name="thumbnail"
                   rules={[
                     {
@@ -307,10 +277,10 @@ export const ProposalManagementPage = () => {
                 >
                   <UploadThumbnail />
                 </Form.Item>
-                <Form.Item<Proposal> name="banner">
+                <Form.Item<PluginProposal> name="banner">
                   <UploadBanner />
                 </Form.Item>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   label="Plugin Name"
                   name="title"
                   rules={[
@@ -322,7 +292,7 @@ export const ProposalManagementPage = () => {
                 >
                   <Input placeholder="e.g., DCA Plugin" />
                 </Form.Item>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   extra="lowercase, kebab-case"
                   label="Plugin ID"
                   name="pluginId"
@@ -355,7 +325,7 @@ export const ProposalManagementPage = () => {
                 >
                   <Input placeholder="e.g., vultisig-dca-1000" />
                 </Form.Item>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   label="Short Description"
                   name="shortDescription"
                   rules={[
@@ -367,12 +337,12 @@ export const ProposalManagementPage = () => {
                 >
                   <Input.TextArea placeholder="Briefly describe your plugin does" />
                 </Form.Item>
-                <Form.Item<Proposal> label="Description Images" name="media">
+                <Form.Item<PluginProposal> label="Description Images" name="media">
                   <UploadMedia />
                 </Form.Item>
               </Stack>
               <Stack $style={{ display: step === 2 ? "block" : "none" }}>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   label="Server Endpoint"
                   name="serverEndpoint"
                   rules={[
@@ -384,7 +354,7 @@ export const ProposalManagementPage = () => {
                 >
                   <Input placeholder="https://your-plugin.example.com" />
                 </Form.Item>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   label="Supported Blockchains"
                   name="supportedChains"
                   rules={[
@@ -405,7 +375,7 @@ export const ProposalManagementPage = () => {
                 </Form.Item>
               </Stack>
               <Stack $style={{ display: step === 3 ? "block" : "none" }}>
-                <Form.Item<Proposal>
+                <Form.Item<PluginProposal>
                   label="Contact Email"
                   name="contactEmail"
                   rules={[
@@ -421,14 +391,14 @@ export const ProposalManagementPage = () => {
                 >
                   <Input placeholder="contact@example.com" />
                 </Form.Item>
-                <Form.Item<Proposal> label="Optional notes" name="notes">
+                <Form.Item<PluginProposal> label="Optional notes" name="notes">
                   <Input.TextArea placeholder="Any additional information or questions" />
                 </Form.Item>
               </Stack>
             </Form>
           </VStack>
           <HStack $style={{ justifyContent: "center", gap: "12px" }}>
-            {step > 1 && (
+            {step > 1 ? (
               <Button
                 kind="secondary"
                 onClick={() =>
@@ -436,6 +406,13 @@ export const ProposalManagementPage = () => {
                 }
               >
                 Back
+              </Button>
+            ) : (
+              <Button
+                kind="secondary"
+                onClick={() => goBack(routeTree.plugins.path)}
+              >
+                Cancel
               </Button>
             )}
             <Button
@@ -500,7 +477,7 @@ const UploadBanner: FC<{
   value?: string;
 }> = ({ onChange, value }) => {
   const { beforeUpload } = useAntd();
-  const form = Form.useFormInstance<Proposal>();
+  const form = Form.useFormInstance<PluginProposal>();
   const colors = useTheme();
 
   return (
@@ -577,7 +554,7 @@ const UploadLogo: FC<{
   value?: string;
 }> = ({ onChange, value }) => {
   const { beforeUpload } = useAntd();
-  const form = Form.useFormInstance<Proposal>();
+  const form = Form.useFormInstance<PluginProposal>();
   const colors = useTheme();
 
   return (
@@ -642,7 +619,7 @@ const UploadMedia: FC<{
 }> = ({ onChange, value = [] }) => {
   const { sm } = useResponsive();
   const { beforeUpload } = useAntd();
-  const form = Form.useFormInstance<Proposal>();
+  const form = Form.useFormInstance<PluginProposal>();
   const colors = useTheme();
 
   return (
@@ -744,7 +721,7 @@ const UploadThumbnail: FC<{
   value?: string;
 }> = ({ onChange, value }) => {
   const { beforeUpload } = useAntd();
-  const form = Form.useFormInstance<Proposal>();
+  const form = Form.useFormInstance<PluginProposal>();
   const colors = useTheme();
 
   return (
