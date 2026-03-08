@@ -1,11 +1,11 @@
 import {
   Form,
   FormProps,
+  message,
   Modal,
   Select,
   Table,
   TableProps,
-  message,
   theme as antTheme,
 } from "antd";
 import { useResponsive } from "antd-style";
@@ -34,25 +34,30 @@ type StateProps = {
   invite?: MemberInvitation;
   loading: boolean;
   members: Member[];
+  refetch: number;
 };
 
 export const PluginMembersPage = () => {
   const [state, setState] = useState<StateProps>({
     loading: true,
     members: [],
+    refetch: 0,
   });
-  const { invite, loading, members } = state;
+  const { invite, loading, members, refetch } = state;
   const { token } = antTheme.useToken();
   const { messageAPI } = useAntd();
   const { hash } = useLocation();
   const { pluginId = "" } = useParams();
   const { md } = useResponsive();
   const [form] = Form.useForm<Member>();
-  const { isAdmin, loading: roleLoading, role } = usePluginRole(pluginId);
+  const { isAdmin, loading: roleLoading } = usePluginRole(pluginId);
   const goBack = useGoBack();
   const navigate = useNavigate();
   const colors = useTheme();
   const open = hash === modalHash.invite;
+
+  const triggerRefetch = () =>
+    setState((prev) => ({ ...prev, refetch: prev.refetch + 1 }));
 
   const handleRemoveMember = (member: Member) => {
     if (member.role === "admin" || member.role === "staff") {
@@ -70,7 +75,7 @@ export const PluginMembersPage = () => {
         try {
           await delMember(pluginId, member.publicKey);
           message.success("Member removed successfully");
-          fetchMembers();
+          triggerRefetch();
         } catch (error) {
           if (error instanceof Error) {
             message.error(error.message);
@@ -170,7 +175,7 @@ export const PluginMembersPage = () => {
 
   useEffect(() => {
     fetchMembers();
-  }, [pluginId]);
+  }, [pluginId, refetch]);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {

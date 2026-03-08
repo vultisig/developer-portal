@@ -1,4 +1,4 @@
-import { Modal, Table, TableProps, message, theme as antTheme } from "antd";
+import { message, Modal, Table, TableProps, theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
 import { useEffect, useEffectEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -20,19 +20,24 @@ import { PluginProposal } from "@/utils/types";
 type StateProps = {
   loading: boolean;
   proposals: PluginProposal[];
+  refetch: number;
 };
 
 export const AdminProposalsPage = () => {
   const [state, setState] = useState<StateProps>({
     loading: true,
     proposals: [],
+    refetch: 0,
   });
-  const { loading, proposals } = state;
+  const { loading, proposals, refetch } = state;
   const { token } = antTheme.useToken();
   const { md } = useResponsive();
   const { isApprover, loading: approverLoading } = useIsApprover();
   const navigate = useNavigate();
   const colors = useTheme();
+
+  const triggerRefetch = () =>
+    setState((prev) => ({ ...prev, refetch: prev.refetch + 1 }));
 
   const handleApprove = (proposalId: string) => {
     Modal.confirm({
@@ -44,7 +49,7 @@ export const AdminProposalsPage = () => {
         try {
           await approveProposal(proposalId);
           message.success("Proposal approved");
-          fetchProposals();
+          triggerRefetch();
         } catch (error) {
           if (error instanceof Error) {
             message.error(error.message);
@@ -66,7 +71,7 @@ export const AdminProposalsPage = () => {
         try {
           await publishProposal(proposalId);
           message.success("Proposal published");
-          fetchProposals();
+          triggerRefetch();
         } catch (error) {
           if (error instanceof Error) {
             message.error(error.message);
@@ -215,7 +220,7 @@ export const AdminProposalsPage = () => {
 
   useEffect(() => {
     if (!approverLoading && isApprover) fetchProposals();
-  }, [approverLoading, isApprover]);
+  }, [approverLoading, isApprover, refetch]);
 
   useEffect(() => {
     if (!approverLoading && !isApprover) {

@@ -10,9 +10,9 @@ import {
   Member,
   MemberInvitation,
   Plugin,
+  PluginProposal,
   PluginRole,
   PluginUpdate,
-  PluginProposal,
 } from "@/utils/types";
 
 export const createPlugin = async (data: PluginProposal): Promise<void> => {
