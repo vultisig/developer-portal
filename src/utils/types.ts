@@ -108,7 +108,7 @@ export type Member = {
   createdAt: string;
   isCurrentUser: boolean;
   publicKey: string;
-  role: (typeof memberRoles)[number];
+  role: "admin" | "staff" | (typeof memberRoles)[number];
 };
 
 export type MemberInvitation = {

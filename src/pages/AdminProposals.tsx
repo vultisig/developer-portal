@@ -212,9 +212,9 @@ export const AdminProposalsPage = () => {
     try {
       const proposals = await getAdminProposals();
 
-      setState({ loading: false, proposals });
+      setState((prev) => ({ ...prev, loading: false, proposals }));
     } catch {
-      setState({ loading: false, proposals: [] });
+      setState((prev) => ({ ...prev, loading: false, proposals: [] }));
     }
   });
 
