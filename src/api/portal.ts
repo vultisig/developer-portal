@@ -2,6 +2,7 @@ import { jwtDecode } from "jwt-decode";
 
 import { apiClient } from "@/api/client";
 import { toSnakeCase } from "@/utils/functions";
+import { Role } from "@/utils/role";
 import {
   AuthToken,
   Earning,
@@ -10,8 +11,9 @@ import {
   Member,
   MemberInvitation,
   Plugin,
-  PluginUpdate,
   PluginProposal,
+  PluginRole,
+  PluginUpdate,
 } from "@/utils/types";
 
 export const createPlugin = async (data: PluginProposal): Promise<void> => {
@@ -20,7 +22,7 @@ export const createPlugin = async (data: PluginProposal): Promise<void> => {
 
 export const createTeamInvite = async (
   pluginId: string,
-  role: Member["role"],
+  role: Role,
 ): Promise<MemberInvitation> => {
   return apiClient.post<MemberInvitation>(`/plugins/${pluginId}/team/invite`, {
     role,
@@ -33,16 +35,16 @@ export const delAuthToken = async (token: string): Promise<void> => {
   return apiClient.del(`/auth/tokens/${token_id}`);
 };
 
-// export const delMember = async (
-//   pluginId: string,
-//   address: string,
-// ): Promise<string> => {
-//   const { message } = await apiClient.del<{ message: string }>(
-//     `/plugins/${pluginId}/team/${encodeURIComponent(address)}`,
-//   );
+export const deleteMember = async (
+  pluginId: string,
+  publicKey: string,
+): Promise<string> => {
+  const { message } = await apiClient.del<{ message: string }>(
+    `/plugins/${pluginId}/team/${encodeURIComponent(publicKey)}`,
+  );
 
-//   return message;
-// };
+  return message;
+};
 
 export const getAuthToken = async (data: {
   chainCodeHex: string;
@@ -70,6 +72,18 @@ export const getEarningSummary = async (): Promise<EarningSummary> => {
 
 export const getPlugin = async (pluginId: string): Promise<Plugin> => {
   return apiClient.get<Plugin>(`/plugins/${pluginId}`);
+};
+
+export const getPluginRole = async (pluginId: string): Promise<PluginRole> => {
+  try {
+    const { canEdit, role } = await apiClient.get<PluginRole>(
+      `/plugins/${pluginId}/my-role`,
+    );
+
+    return { canEdit, role };
+  } catch {
+    return { canEdit: false, role: "viewer" };
+  }
 };
 
 export const getPlugins = async (): Promise<Plugin[]> => {
@@ -100,6 +114,24 @@ export const updatePlugin = async ({
     signature,
     signed_message: signedMessage,
   });
+};
+
+export const getAdminProposals = async (): Promise<PluginProposal[]> => {
+  return apiClient.get<PluginProposal[]>("/admin/plugin-proposals");
+};
+
+export const approveProposal = async (
+  proposalId: string,
+  publicKey: string,
+): Promise<void> => {
+  return apiClient.post(
+    `/admin/plugin-proposals/${proposalId}/approve`,
+    toSnakeCase({ publicKey }),
+  );
+};
+
+export const publishProposal = async (proposalId: string): Promise<void> => {
+  return apiClient.post(`/admin/plugin-proposals/${proposalId}/publish`);
 };
 
 export const validatePluginId = async (pluginId: string): Promise<boolean> => {

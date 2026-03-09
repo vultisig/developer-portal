@@ -1,6 +1,7 @@
 import {
   Form,
   FormProps,
+  message,
   Modal,
   Select,
   Table,
@@ -12,18 +13,22 @@ import { useEffect, useEffectEvent, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
-import { createTeamInvite, getMembers } from "@/api/portal";
+import { createTeamInvite, deleteMember, getMembers } from "@/api/portal";
 import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { StatusModal } from "@/components/StatusModal";
 import { useAntd } from "@/hooks/useAntd";
 import { useGoBack } from "@/hooks/useGoBack";
+import { usePluginRole } from "@/hooks/usePluginRole";
 import { PeopleAddIcon } from "@/icons/PeopleAddIcon";
 import { TrashCanIcon } from "@/icons/TrashCanIcon";
 import { Button } from "@/toolkits/Button";
+import { Spin } from "@/toolkits/Spin";
 import { HStack, Stack, VStack } from "@/toolkits/Stack";
-import { memberRoles, modalHash } from "@/utils/constants";
+import { modalHash } from "@/utils/constants";
 import { camelCaseToTitle, match, snakeCaseToTitle } from "@/utils/functions";
+import { memberRoles } from "@/utils/role";
+import { routeTree } from "@/utils/routes";
 import { Member, MemberInvitation } from "@/utils/types";
 
 type StateProps = {
@@ -42,12 +47,44 @@ export const PluginMembersPage = () => {
   const { messageAPI } = useAntd();
   const { hash } = useLocation();
   const { pluginId = "" } = useParams();
+  const { role } = usePluginRole(pluginId);
   const { md } = useResponsive();
   const [form] = Form.useForm<Member>();
   const goBack = useGoBack();
   const navigate = useNavigate();
   const colors = useTheme();
   const open = hash === modalHash.invite;
+
+  const action: TableProps<Member>["columns"] = [
+    {
+      align: "center",
+      dataIndex: "publicKey",
+      key: "publicKey",
+      title: "Action",
+      width: 100,
+      render: (_, { publicKey, role }) => {
+        if (role === "admin" || role === "staff") return "-";
+
+        return (
+          <HStack $style={{ justifyContent: "center" }}>
+            <HStack
+              as="span"
+              onClick={() => handleDelete(publicKey)}
+              $style={{
+                backgroundColor: colors.bgTertiary.toHex(),
+                borderRadius: "50%",
+                cursor: "pointer",
+                padding: "12px",
+              }}
+              $hover={{ color: colors.error.toHex() }}
+            >
+              <TrashCanIcon fontSize={16} />
+            </HStack>
+          </HStack>
+        );
+      },
+    },
+  ];
 
   const columns: TableProps<Member>["columns"] = [
     {
@@ -76,38 +113,18 @@ export const PluginMembersPage = () => {
         </HStack>
       ),
     },
-    {
-      align: "center",
-      dataIndex: "id",
-      key: "id",
-      title: "Action",
-      width: 100,
-      render: () => (
-        <HStack $style={{ justifyContent: "center" }}>
-          <HStack
-            as="span"
-            $style={{
-              backgroundColor: colors.bgTertiary.toHex(),
-              borderRadius: "50%",
-              cursor: "pointer",
-              padding: "12px",
-            }}
-            $hover={{ color: colors.error.toHex() }}
-          >
-            <TrashCanIcon fontSize={16} />
-          </HStack>
-        </HStack>
-      ),
-    },
+    ...(role === "admin" ? action : []),
   ];
 
-  const fetchMembers = useEffectEvent(async () => {
+  const fetchMembers = async () => {
     setState((prev) => ({ ...prev, loading: true }));
 
     const members = await getMembers(pluginId);
 
     setState((prev) => ({ ...prev, loading: false, members }));
-  });
+  };
+
+  const fetchMembersEvent = useEffectEvent(fetchMembers);
 
   const handleClipboard = () => {
     if (!invite) return;
@@ -119,25 +136,66 @@ export const PluginMembersPage = () => {
     });
   };
 
-  const handleFinish: FormProps<Member>["onFinish"] = async ({ role }) => {
-    const invite = await createTeamInvite(pluginId, role);
+  const handleDelete = (publicKey: Member["publicKey"]) => {
+    Modal.confirm({
+      title: "Remove Team Member?",
+      content: "This action cannot be undone.",
+      okText: "Remove",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await deleteMember(pluginId, publicKey);
 
-    form.resetFields();
+          message.success("Member removed successfully");
 
-    setState((prev) => ({ ...prev, invite }));
-
-    goBack();
+          fetchMembers();
+        } catch (error) {
+          message.error(
+            error instanceof Error ? error.message : "Failed to remove member",
+          );
+        }
+      },
+    });
   };
 
-  useEffect(() => {
-    fetchMembers();
-  }, [pluginId]);
+  const handleFinish: FormProps<Member>["onFinish"] = async ({ role }) => {
+    try {
+      const invite = await createTeamInvite(pluginId, role);
+
+      form.resetFields();
+
+      setState((prev) => ({ ...prev, invite }));
+
+      goBack();
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : "Failed to create invite link",
+      );
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
 
     form.resetFields();
   }, [form, open]);
+
+  useEffect(() => {
+    if (!role) return;
+
+    if (role !== "admin") {
+      message.error("Only admins can manage team members");
+
+      navigate(routeTree.plugins.path, { replace: true });
+
+      return;
+    }
+
+    fetchMembersEvent();
+  }, [navigate, role]);
+
+  if (role !== "admin") return <Spin centered />;
 
   return (
     <>
@@ -208,10 +266,12 @@ export const PluginMembersPage = () => {
             rules={[{ required: true, message: "Please select the role" }]}
           >
             <Select
-              options={memberRoles.map((role) => ({
-                label: camelCaseToTitle(role),
-                value: role,
-              }))}
+              options={memberRoles
+                .filter((role) => role === "editor" || role === "viewer")
+                .map((role) => ({
+                  label: camelCaseToTitle(role),
+                  value: role,
+                }))}
               placeholder="Select Role"
             />
           </Form.Item>
@@ -222,7 +282,7 @@ export const PluginMembersPage = () => {
             {({ getFieldsValue }) => {
               const { role } = getFieldsValue();
 
-              if (!role) return null;
+              if (role !== "editor" && role !== "viewer") return null;
 
               return (
                 <Stack

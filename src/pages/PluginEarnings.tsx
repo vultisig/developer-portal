@@ -1,6 +1,7 @@
 import {
   Form,
   FormProps,
+  message,
   Select,
   Table,
   TableProps,
@@ -10,7 +11,7 @@ import {
 import { useResponsive } from "antd-style";
 import { debounce } from "lodash-es";
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { getEarnings, getPlugin } from "@/api/portal";
@@ -18,6 +19,7 @@ import { DateView } from "@/components/DateView";
 import { MiddleTruncate } from "@/components/MiddleTruncate";
 import { useCore } from "@/hooks/useCore";
 import { useFilterParams } from "@/hooks/useFilterParams";
+import { usePluginRole } from "@/hooks/usePluginRole";
 import { ChartSixIcon } from "@/icons/ChartSixIcon";
 import { NewspaperIcon } from "@/icons/NewspaperIcon";
 import { PencilLineIcon } from "@/icons/PencilLineIcon";
@@ -54,8 +56,10 @@ export const PluginEarningsPage = () => {
   const { baseValue, currency } = useCore();
   const { filters, setFilters } = useFilterParams<EarningFilters>();
   const { pluginId = "" } = useParams();
+  const { canEdit, role } = usePluginRole(pluginId);
   const { md } = useResponsive();
   const [form] = Form.useForm<EarningFilters>();
+  const navigate = useNavigate();
   const colors = useTheme();
 
   const columns: TableProps<Earning>["columns"] = [
@@ -235,34 +239,20 @@ export const PluginEarningsPage = () => {
   }, [filters, plugin]);
 
   useEffect(() => {
+    if (!role) return;
+
+    if (role === "viewer") {
+      message.error("Viewers don't have access to earnings");
+
+      navigate(routeTree.plugins.path, { replace: true });
+
+      return;
+    }
+
     fetchPlugin();
-  }, [pluginId]);
+  }, [navigate, role]);
 
-  const stats = [
-    {
-      color: colors.info,
-      icon: ChartSixIcon,
-      label: "Total Revenue",
-      unit: "All time",
-      value: "0",
-    },
-    {
-      color: colors.success,
-      icon: PeopleAddedIcon,
-      label: "Active Users",
-      unit: "Last 30 days",
-      value: "0",
-    },
-    {
-      color: colors.accentFour,
-      icon: NewspaperIcon,
-      label: "Transactions",
-      unit: "Last 30 days",
-      value: earnings.length,
-    },
-  ];
-
-  if (!plugin) return <Spin centered />;
+  if (!plugin || !role || role === "viewer") return <Spin centered />;
 
   return (
     <VStack
@@ -297,13 +287,15 @@ export const PluginEarningsPage = () => {
             {plugin.title}
           </Stack>
         </HStack>
-        <Button
-          href={routeTree.pluginUpdate.link(plugin.id)}
-          icon={<PencilLineIcon fontSize={16} />}
-          state={true}
-        >
-          {md && "Update Plugin"}
-        </Button>
+        {canEdit && (
+          <Button
+            href={routeTree.pluginUpdate.link(plugin.id)}
+            icon={<PencilLineIcon fontSize={16} />}
+            state={true}
+          >
+            {md && "Update Plugin"}
+          </Button>
+        )}
       </HStack>
       <Stack
         $style={{
@@ -315,7 +307,29 @@ export const PluginEarningsPage = () => {
           padding: "20px",
         }}
       >
-        {stats.map(({ color, icon, label, unit, value }, index) => (
+        {[
+          {
+            color: colors.info,
+            icon: ChartSixIcon,
+            label: "Total Revenue",
+            unit: "All time",
+            value: "0",
+          },
+          {
+            color: colors.success,
+            icon: PeopleAddedIcon,
+            label: "Active Users",
+            unit: "Last 30 days",
+            value: "0",
+          },
+          {
+            color: colors.accentFour,
+            icon: NewspaperIcon,
+            label: "Transactions",
+            unit: "Last 30 days",
+            value: earnings.length,
+          },
+        ].map(({ color, icon, label, unit, value }, index) => (
           <HStack
             as="span"
             key={index}

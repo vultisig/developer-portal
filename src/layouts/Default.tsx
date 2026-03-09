@@ -1,14 +1,15 @@
 import { Dropdown, MenuProps, theme as antTheme } from "antd";
 import { useResponsive } from "antd-style";
-import { useMemo } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useTheme } from "styled-components";
 
 import { CurrencyModal } from "@/components/CurrencyModal";
 import { useApp } from "@/hooks/useApp";
 import { useCore } from "@/hooks/useCore";
+import { useIsApprover } from "@/hooks/useIsApprover";
 import { ArrowBoxLeftIcon } from "@/icons/ArrowBoxLeftIcon";
 import { ArrowBoxRightIcon } from "@/icons/ArrowBoxRightIcon";
+import { CheckmarkIcon } from "@/icons/CheckmarkIcon";
 import { DollarIcon } from "@/icons/DollarIcon";
 import { DotGridVerticalIcon } from "@/icons/DotGridVerticalIcon";
 import { MoonIcon } from "@/icons/MoonIcon";
@@ -27,38 +28,46 @@ export const DefaultLayout = () => {
   const { currency, currentRoute, setTheme, theme } = useCore();
   const { lg } = useResponsive();
   const { token } = antTheme.useToken();
+  const isApprover = useIsApprover();
   const navigate = useNavigate();
   const colors = useTheme();
 
-  const mainMenu = useMemo(
-    () => [
-      {
-        icon: SquareGridCircleIcon,
-        isActive: currentRoute === "root",
-        label: "Dashboard",
-        path: routeTree.root.path,
-      },
-      {
-        icon: PuzzleIcon,
-        isActive: currentRoute === "plugins",
-        label: "Plugins",
-        path: routeTree.plugins.path,
-      },
-      {
-        icon: NewspaperIcon,
-        isActive: currentRoute === "proposals",
-        label: "Proposals",
-        path: routeTree.proposals.path,
-      },
-      {
-        icon: DollarIcon,
-        isActive: currentRoute === "earnings",
-        label: "Earnings",
-        path: routeTree.earnings.path,
-      },
-    ],
-    [currentRoute],
-  );
+  const mainMenu = [
+    {
+      icon: SquareGridCircleIcon,
+      isActive: currentRoute === "root",
+      label: "Dashboard",
+      path: routeTree.root.path,
+    },
+    {
+      icon: PuzzleIcon,
+      isActive: currentRoute === "plugins",
+      label: "Plugins",
+      path: routeTree.plugins.path,
+    },
+    {
+      icon: NewspaperIcon,
+      isActive: currentRoute === "proposals",
+      label: "Proposals",
+      path: routeTree.proposals.path,
+    },
+    {
+      icon: DollarIcon,
+      isActive: currentRoute === "earnings",
+      label: "Earnings",
+      path: routeTree.earnings.path,
+    },
+    ...(isApprover
+      ? [
+          {
+            icon: CheckmarkIcon,
+            isActive: currentRoute === "adminProposals",
+            label: "Review",
+            path: routeTree.adminProposals.path,
+          },
+        ]
+      : []),
+  ];
 
   const sideMenu: MenuProps["items"] = [
     {

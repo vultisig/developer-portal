@@ -9,6 +9,7 @@ import { useApp } from "@/hooks/useApp";
 import { useCore } from "@/hooks/useCore";
 import { AuthLayout } from "@/layouts/Auth";
 import { DefaultLayout } from "@/layouts/Default";
+import { AdminProposalsPage } from "@/pages/AdminProposals";
 import { ConnectPage } from "@/pages/Connect";
 import { DashboardPage } from "@/pages/Dashboard";
 import { EarningsPage } from "@/pages/Earnings";
@@ -85,6 +86,13 @@ export const Routes = () => {
         {
           path: routeTree.proposals.path,
           element: setCurrentRoute("proposals", <ProposalsPage />),
+        },
+        {
+          path: routeTree.adminProposals.path,
+          element: setCurrentRoute(
+            "adminProposals",
+            <AdminProposalsPage />,
+          ),
         },
       ],
       errorElement: <InternalErrorPage />,
