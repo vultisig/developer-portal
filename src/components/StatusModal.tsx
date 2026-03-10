@@ -27,11 +27,11 @@ export const StatusModal: FC<StatusModalProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        padding: 32,
+        padding: 24,
       },
-      container: { overflow: "hidden", padding: 0 },
+      container: { gap: 0, overflow: "hidden", padding: 0 },
       footer: { display: "none" },
-      header: { margin: 0 },
+      header: { margin: 0, padding: 0 },
     }}
     title={
       <Stack

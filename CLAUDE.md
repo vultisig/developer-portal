@@ -1,6 +1,6 @@
 # CLAUDE.md - Vultisig Developer Portal
 
-This file contains key information about the codebase for AI assistants.
+This file contains key information about the codebase for AI assistants
 
 ## Project Overview
 

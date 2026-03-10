@@ -1,0 +1,17 @@
+import { FC, SVGProps } from "react";
+
+export const ToolboxIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    height="1em"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="1.5"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path d="M12.75 10.75V4.75C12.75 3.64543 13.6454 2.75 14.75 2.75H17.25C18.3546 2.75 19.25 3.64543 19.25 4.75V10.75M12.75 6.75H15.25M4.75 10.75V6.50424C4.75 6.17326 4.83214 5.84745 4.98906 5.55604L6.26295 3.19024C6.40895 2.91909 6.69204 2.75 7 2.75C7.30796 2.75 7.59105 2.91909 7.73705 3.19024L9.01094 5.55604C9.16786 5.84745 9.25 6.17326 9.25 6.50424V10.75M2.75 10.75H21.25V18.25C21.25 19.3546 20.3546 20.25 19.25 20.25H4.75C3.64543 20.25 2.75 19.3546 2.75 18.25V10.75Z" />
+  </svg>
+);

@@ -5,7 +5,6 @@ export const ZapIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
     fill="none"
     height="1em"
     stroke="currentColor"
-    strokeLinecap="round"
     strokeLinejoin="round"
     strokeWidth="1.5"
     viewBox="0 0 24 24"

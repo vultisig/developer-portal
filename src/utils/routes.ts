@@ -1,23 +1,50 @@
-type RouteKey =
-  | "plugins"
-  | "pluginEdit"
+export type RouteKey =
+  | "account"
+  | "adminProposals"
   | "earnings"
-  | "newPlugin"
-  | "acceptInvite"
   | "notFound"
-  | "root";
+  | "plugins"
+  | "pluginCreate"
+  | "pluginEarnings"
+  | "pluginMembers"
+  | "pluginUpdate"
+  | "proposals"
+  | "projectCategories"
+  | "projectManagement"
+  | "root"
+  | "users";
 
 export const routeTree = {
-  plugins: { path: "/plugins" },
-  pluginEdit: {
-    link: (id: string) => `/plugins/${id}/edit`,
-    path: "/plugins/:id/edit",
-  },
+  account: { path: "/account" },
+  adminProposals: { path: "/admin/proposals" },
   earnings: { path: "/earnings" },
-  newPlugin: { path: "/new-plugin" },
-  acceptInvite: { path: "/invite/accept" },
   notFound: { path: "*" },
+  plugins: { path: "/plugins" },
+  pluginCreate: { path: "/plugins/create" },
+  pluginEarnings: {
+    path: "/plugins/:pluginId/earnings",
+    link: (pluginId: string) => `/plugins/${pluginId}/earnings`,
+  },
+  pluginMembers: {
+    path: "/plugins/:pluginId/members",
+    link: (pluginId: string) => `/plugins/${pluginId}/members`,
+  },
+  pluginUpdate: {
+    path: "/plugins/:pluginId",
+    link: (pluginId: string) => `/plugins/${pluginId}`,
+  },
+  projectCategories: {
+    path: "/account/projects/:projectId/categories",
+    link: (projectId: string) => `/account/projects/${projectId}/categories`,
+  },
+  projectManagement: {
+    path: `/account/projects/:projectId`,
+    link: (projectId: string) => `/account/projects/${projectId}`,
+  },
+  proposals: { path: "/proposals" },
+
   root: { path: "/" },
+  users: { path: "/users" },
 } satisfies Record<
   RouteKey,
   { path: string; link?: (...args: string[]) => string }
