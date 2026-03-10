@@ -135,13 +135,9 @@ export const publishProposal = async (proposalId: string): Promise<void> => {
 };
 
 export const validatePluginId = async (pluginId: string): Promise<boolean> => {
-  try {
-    const { available } = await apiClient.get<{ available: boolean }>(
-      `/plugin-proposals/validate/${pluginId}`,
-    );
+  const { available } = await apiClient.get<{ available: boolean }>(
+    `/plugin-proposals/validate/${pluginId}`,
+  );
 
-    return available;
-  } catch {
-    return false;
-  }
+  return available;
 };

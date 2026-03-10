@@ -185,9 +185,16 @@ export const imageToDimensions = (
 ): Promise<{ height: number; width: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => resolve({ height: img.height, width: img.width });
-    img.onerror = reject;
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve({ height: img.height, width: img.width });
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(e);
+    };
   });
 };
 

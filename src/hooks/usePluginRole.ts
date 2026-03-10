@@ -9,14 +9,14 @@ export const usePluginRole = (pluginId: string) => {
   const fetchRole = useEffectEvent(async () => {
     setState({});
 
+    if (!pluginId) return;
+
     const { canEdit, role } = await getPluginRole(pluginId);
 
     setState({ canEdit, role });
   });
 
   useEffect(() => {
-    if (!pluginId) return;
-
     fetchRole();
   }, [pluginId]);
 

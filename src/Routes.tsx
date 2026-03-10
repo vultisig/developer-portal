@@ -1,4 +1,4 @@
-import { FC, ReactNode, useEffect } from "react";
+import { FC, ReactNode, useEffect, useMemo } from "react";
 import {
   createBrowserRouter,
   Navigate,
@@ -49,72 +49,79 @@ const ProtectedRoute: FC<{ children: ReactNode }> = ({ children }) => {
 };
 
 export const Routes = () => {
-  const router = createBrowserRouter([
-    {
-      path: routeTree.root.path,
-      element: (
-        <ProtectedRoute>
-          <DefaultLayout />
-        </ProtectedRoute>
-      ),
-      children: [
-        { index: true, element: setCurrentRoute("root", <DashboardPage />) },
+  const router = useMemo(
+    () =>
+      createBrowserRouter([
         {
-          path: routeTree.earnings.path,
-          element: setCurrentRoute("earnings", <EarningsPage />),
-        },
-        {
-          path: routeTree.plugins.path,
-          element: setCurrentRoute("plugins", <PluginsPage />),
-        },
-        {
-          path: routeTree.pluginCreate.path,
-          element: setCurrentRoute("plugins", <PluginCreatePage />),
-        },
-        {
-          path: routeTree.pluginEarnings.path,
-          element: setCurrentRoute("plugins", <PluginEarningsPage />),
-        },
-        {
-          path: routeTree.pluginUpdate.path,
-          element: setCurrentRoute("plugins", <PluginUpdatePage />),
-        },
-        {
-          path: routeTree.pluginMembers.path,
-          element: setCurrentRoute("plugins", <PluginMembersPage />),
-        },
-        {
-          path: routeTree.proposals.path,
-          element: setCurrentRoute("proposals", <ProposalsPage />),
-        },
-        {
-          path: routeTree.adminProposals.path,
-          element: setCurrentRoute(
-            "adminProposals",
-            <AdminProposalsPage />,
+          path: routeTree.root.path,
+          element: (
+            <ProtectedRoute>
+              <DefaultLayout />
+            </ProtectedRoute>
           ),
+          children: [
+            {
+              index: true,
+              element: setCurrentRoute("root", <DashboardPage />),
+            },
+            {
+              path: routeTree.earnings.path,
+              element: setCurrentRoute("earnings", <EarningsPage />),
+            },
+            {
+              path: routeTree.plugins.path,
+              element: setCurrentRoute("plugins", <PluginsPage />),
+            },
+            {
+              path: routeTree.pluginCreate.path,
+              element: setCurrentRoute("plugins", <PluginCreatePage />),
+            },
+            {
+              path: routeTree.pluginEarnings.path,
+              element: setCurrentRoute("plugins", <PluginEarningsPage />),
+            },
+            {
+              path: routeTree.pluginUpdate.path,
+              element: setCurrentRoute("plugins", <PluginUpdatePage />),
+            },
+            {
+              path: routeTree.pluginMembers.path,
+              element: setCurrentRoute("plugins", <PluginMembersPage />),
+            },
+            {
+              path: routeTree.proposals.path,
+              element: setCurrentRoute("proposals", <ProposalsPage />),
+            },
+            {
+              path: routeTree.adminProposals.path,
+              element: setCurrentRoute(
+                "adminProposals",
+                <AdminProposalsPage />,
+              ),
+            },
+          ],
+          errorElement: <InternalErrorPage />,
         },
-      ],
-      errorElement: <InternalErrorPage />,
-    },
-    {
-      path: routeTree.account.path,
-      element: <AuthLayout />,
-      children: [
-        { index: true, element: <ConnectPage /> },
         {
-          path: routeTree.projectCategories.path,
-          element: <ProjectCategoriesPage />,
+          path: routeTree.account.path,
+          element: <AuthLayout />,
+          children: [
+            { index: true, element: <ConnectPage /> },
+            {
+              path: routeTree.projectCategories.path,
+              element: <ProjectCategoriesPage />,
+            },
+            {
+              path: routeTree.projectManagement.path,
+              element: <ProjectManagementPage />,
+            },
+          ],
+          errorElement: <InternalErrorPage />,
         },
-        {
-          path: routeTree.projectManagement.path,
-          element: <ProjectManagementPage />,
-        },
-      ],
-      errorElement: <InternalErrorPage />,
-    },
-    { path: routeTree.notFound.path, element: <NotFoundPage /> },
-  ]);
+        { path: routeTree.notFound.path, element: <NotFoundPage /> },
+      ]),
+    [],
+  );
 
   return <RouterProvider router={router} />;
 };
