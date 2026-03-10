@@ -6,18 +6,20 @@ import { PluginRole } from "@/utils/types";
 export const usePluginRole = (pluginId: string) => {
   const [state, setState] = useState<Partial<PluginRole>>({});
 
-  const fetchRole = useEffectEvent(async () => {
+  const fetchRole = useEffectEvent(async (requestedPluginId: string) => {
     setState({});
 
-    const { canEdit, role } = await getPluginRole(pluginId);
+    if (!requestedPluginId) return;
+
+    const { canEdit, role } = await getPluginRole(requestedPluginId);
+    
+    if (requestedPluginId !== pluginId) return;
 
     setState({ canEdit, role });
   });
 
   useEffect(() => {
-    if (!pluginId) return;
-
-    fetchRole();
+    fetchRole(pluginId);
   }, [pluginId]);
 
   return state;

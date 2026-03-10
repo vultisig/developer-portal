@@ -309,11 +309,19 @@ export const PluginCreatePage = () => {
                       validator: async (_, value) => {
                         if (!value || step > 1) return;
 
-                        const available = await validatePluginId(value);
+                        try {
+                          const available = await validatePluginId(value);
 
-                        if (!available) {
+                          if (!available) {
+                            return Promise.reject(
+                              new Error("This plugin ID is already taken!"),
+                            );
+                          }
+                        } catch {
                           return Promise.reject(
-                            new Error("This plugin ID is already taken!"),
+                            new Error(
+                              "Failed to validate plugin ID. Please try again.",
+                            ),
                           );
                         }
 
@@ -337,7 +345,10 @@ export const PluginCreatePage = () => {
                 >
                   <Input.TextArea placeholder="Briefly describe your plugin does" />
                 </Form.Item>
-                <Form.Item<PluginProposal> label="Description Images" name="media">
+                <Form.Item<PluginProposal>
+                  label="Description Images"
+                  name="media"
+                >
                   <UploadMedia />
                 </Form.Item>
               </Stack>
